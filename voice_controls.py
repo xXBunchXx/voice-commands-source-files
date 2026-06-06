@@ -712,10 +712,11 @@ def run(stop_event: _threading.Event | None = None) -> bool:
     global APPS, PROC_NAMES, MODEL_PATH, _stop_event, _restart_requested
 
     # Reload config fresh every time so newly set model paths / app entries work
-    _cfg       = user_config.load()
-    MODEL_PATH = user_config.get_model_path()
-    APPS       = _cfg.get("APPS", APPS)
-    PROC_NAMES = _cfg.get("PROC_NAMES", PROC_NAMES)
+    global CLOSE_DELAY
+    _cfg        = user_config.load()
+    MODEL_PATH  = user_config.get_model_path()
+    APPS        = _cfg.get("APPS", APPS)
+    PROC_NAMES  = _cfg.get("PROC_NAMES", PROC_NAMES)
 
     if stop_event is None:
         stop_event = _threading.Event()
