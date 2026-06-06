@@ -308,15 +308,11 @@ class SettingsWindow(tk.Toplevel):
 
     def _save_commands(self):
         try:
-            words = {k: e.get().strip().lower() for k, e in self._cmd_entries.items()}
-            # Warn about empty fields
-            empty = [k for k, w in words.items() if not w]
-            if empty:
-                messagebox.showwarning("Empty fields",
-                                       f"These actions have no trigger word:\n" +
-                                       "\n".join(f"  • {k}" for k in empty),
-                                       parent=self)
-                return
+            words = {}
+            for k, e in self._cmd_entries.items():
+                val = e.get().strip().lower()
+                # Fall back to the built-in default if the user left the field blank
+                words[k] = val if val else user_config.DEFAULT_COMMAND_WORDS.get(k, "")
             user_config.set_command_words(words)
             self._flash("✓  Command words saved — restart engine to apply.")
         except Exception as e:
