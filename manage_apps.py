@@ -213,8 +213,9 @@ class ScanDialog(tk.Toplevel):
         self._add_btn.config(state="normal")
         self._update_count()
 
-    def _make_row(self, parent, r, var, already_added):
+    def _make_row(self, parent, r, var, name_var, already_added):
         BG = "#2a2a3e"; FG = "#cdd6f4"; MUTED = "#585b70"; GRN = "#a6e3a1"
+        ENTRY_BG = "#1e1e2e"
         row = tk.Frame(parent, bg=BG, pady=3)
         row.pack(fill="x", padx=4, pady=1)
         cb = tk.Checkbutton(row, variable=var, bg=BG, activebackground=BG,
@@ -224,13 +225,21 @@ class ScanDialog(tk.Toplevel):
         cb.pack(side="left")
         info = tk.Frame(row, bg=BG)
         info.pack(side="left", fill="x", expand=True)
-        tag = f"  ✓ already added" if already_added else f"  voice: \"{r['name']}\""
         tk.Label(info, text=r["display"], bg=BG,
                  fg=MUTED if already_added else FG,
                  font=("Segoe UI Semibold", 9), anchor="w").pack(anchor="w")
-        tk.Label(info, text=tag, bg=BG,
-                 fg=MUTED if already_added else GRN,
-                 font=("Segoe UI", 8), anchor="w").pack(anchor="w")
+        if already_added:
+            tk.Label(info, text="  ✓ already added", bg=BG, fg=MUTED,
+                     font=("Segoe UI", 8), anchor="w").pack(anchor="w")
+        else:
+            name_row = tk.Frame(info, bg=BG)
+            name_row.pack(anchor="w", fill="x")
+            tk.Label(name_row, text="  voice name:", bg=BG, fg=GRN,
+                     font=("Segoe UI", 8)).pack(side="left")
+            tk.Entry(name_row, textvariable=name_var, width=20,
+                     bg=ENTRY_BG, fg=FG, insertbackground=FG,
+                     relief="flat", font=("Segoe UI", 8), bd=2).pack(
+                side="left", padx=(4, 0))
 
     def _filter(self):
         query = self._search_var.get().lower()
