@@ -285,6 +285,7 @@ class SettingsWindow(tk.Toplevel):
 
         _lbl(frame,
              "Change the words you say to trigger each action.\n"
+             "Separate multiple trigger words with a comma  (e.g.  pause,play)\n"
              "Restart the engine after saving for changes to take effect.",
              fg=MUTED, font=("Segoe UI", 8), justify="left").pack(
             anchor="w", padx=2, pady=(8, 4))
