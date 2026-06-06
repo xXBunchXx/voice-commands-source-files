@@ -29,53 +29,17 @@ except Exception:
     ctypes.windll.user32.SetProcessDPIAware()        # fallback
 
 # ── CONFIG ───────────────────────────────────────────────────────────────
-MODEL_PATH = r"C:\Users\shark\Desktop\AI\Skip spotify track\vosk-model-small-en-us-0.15"
+# APPS and PROC_NAMES are loaded from the user's local config file so that
+# each machine keeps its own entries and updates never wipe them.
+_cfg        = user_config.load()
+MODEL_PATH  = _cfg.get("MODEL_PATH", r"C:\VoiceCommands\vosk-model-small-en-us-0.15")
+APPS        = _cfg.get("APPS", {})
+PROC_NAMES  = _cfg.get("PROC_NAMES", {})
+
 SAMPLE_RATE = 16000
 FRAMES_PER_BUFFER = 1024
 COOLDOWN = 1.5
 CONFIDENCE_THRESHOLD = 0.65
-
-APPS = {
-    "firefox":  r"C:\Program Files\Mozilla Firefox\firefox.exe",
-    "godot":    r"steam://rungameid/17420298833333583872",
-    "steam":    r"C:\Program Files (x86)\Steam\steam.exe",
-    "files":    r"C:\Windows\explorer.exe",
-    "spotify":  r"C:\Users\shark\AppData\Roaming\Spotify\Spotify.exe",
-    "discord":  r"C:\Users\shark\AppData\Local\Discord\app-1.0.9003\Discord.exe",
-    "github":   r"C:\Users\shark\AppData\Local\GitHubDesktop\GitHubDesktop.exe",
-    "command":  r"C:\Windows\System32\cmd.exe",
-    "claude":   r"C:\Program Files\WindowsApps\Claude_1.11187.4.0_x64__pzs8sxrjxfjjc\app\claude.exe",
-    "visual studio":     r"C:\Users\shark\AppData\Local\Programs\Microsoft VS Code\Code.exe",
-    "no mans sky": r"steam://rungameid/275850",
-    "fifa": r"steam://rungameid/3405690",
-    "settings": r"ms-settings:",
-    "zomboid": r"steam://rungameid/108600",
-    "ark": r"steam://rungameid/2399830",
-    "rimworld": r"steam://rungameid/294100",
-}
-
-# Exe name as shown in Task Manager → Details (lowercase).
-# Prefix wildcards ending in * match any exe starting with that string —
-# so "godot*" matches godot.exe, godot_v4.6.3-stable_win64.exe, etc.
-# No need to update this when Godot updates.
-PROC_NAMES = {
-    "firefox": "firefox.exe",
-    "godot":   "godot*",         # matches any Godot version automatically
-    "steam":   "steam.exe",
-    "files":   "explorer.exe",
-    "spotify": "spotify.exe",
-    "discord": "discord.exe",
-    "github":  "githubdesktop.exe",
-    "command": "cmd.exe",
-    "visual studio": "code.exe",
-    "claude":  "claude.exe",
-    "no mans sky": "NMS.exe",
-    "fifa": "FC26.exe",
-    "settings": "ms-settings:",
-    "zomboid": "ProjectZomboid64.exe",
-    "ark": "ArkAscended.exe",
-    "rimworld": "RimWorldWin64.exe",
-}
 
 # Window classes to exclude per app.
 # IME / Default IME are Windows system Input Method Editor windows —
