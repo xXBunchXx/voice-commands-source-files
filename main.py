@@ -12,6 +12,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
 import urllib.request
 
+import pystray
+from PIL import Image, ImageDraw
 import user_config
 
 VERSION = "1.0.0"
