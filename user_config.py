@@ -159,6 +159,12 @@ def load() -> dict:
         if data.get("PROC_NAMES", {}).get("settings") == "ms-settings:":
             data["PROC_NAMES"]["settings"] = "SystemSettings.exe"
             changed = True
+        # Remove any blank command words so defaults are used instead
+        cw = data.get("COMMAND_WORDS", {})
+        cleaned = {k: v for k, v in cw.items() if v and v.strip()}
+        if cleaned != cw:
+            data["COMMAND_WORDS"] = cleaned
+            changed = True
         if changed:
             save(data)
         return data
