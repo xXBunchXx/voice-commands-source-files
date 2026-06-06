@@ -400,8 +400,12 @@ class StatusOverlay:
         pos = user_config.get_overlay_position()
 
         if pos == "near cursor":
-            cx = self._root.winfo_pointerx()
-            cy = self._root.winfo_pointery()
+            import ctypes
+            class _POINT(ctypes.Structure):
+                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+            _pt = _POINT()
+            ctypes.windll.user32.GetCursorPos(ctypes.byref(_pt))
+            cx, cy = _pt.x, _pt.y
             x  = cx + 18
             y  = cy + 22
             # Clamp so the box never goes off-screen
