@@ -364,7 +364,7 @@ class SettingsWindow(tk.Toplevel):
             lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))
 
         self._ctx_canvas = canvas
-        self._reload_context_list()
+        # _reload_context_list() is called from _load() after window is rendered
 
         # Add / Delete row
         bot = tk.Frame(frame, bg=BG)
