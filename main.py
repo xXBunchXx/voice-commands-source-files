@@ -21,9 +21,6 @@ VERSION = "1.0.0"
 GITHUB_RAW     = "https://raw.githubusercontent.com/xXBunchXx/Voice-commands/main/"
 GITHUB_EXE_URL = "https://github.com/xXBunchXx/Voice-commands/raw/main/dist/VoiceCommands.exe"
 
-MODEL_NAME    = "vosk-model-small-en-us-0.15"
-MODEL_ZIP_URL = f"https://alphacephei.com/vosk/models/{MODEL_NAME}.zip"
-
 # ── Log queue — voice engine writes here, UI reads it ─────────────────────────
 
 _log_queue: queue.Queue = queue.Queue()
