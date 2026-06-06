@@ -21,8 +21,8 @@ VERSION = "1.0.0"
 GITHUB_RAW     = "https://raw.githubusercontent.com/xXBunchXx/Voice-commands/main/"
 GITHUB_EXE_URL = "https://github.com/xXBunchXx/Voice-commands/raw/main/dist/VoiceCommands.exe"
 
-MODEL_NAME     = "vosk-model-small-en-us-0.15"
-MODEL_ZIP_URL  = f"https://alphacephei.com/vosk/models/{MODEL_NAME}.zip"
+MODEL_NAME    = "vosk-model-small-en-us-0.15"
+MODEL_ZIP_URL = f"https://alphacephei.com/vosk/models/{MODEL_NAME}.zip"
 
 # ── Log queue — voice engine writes here, UI reads it ─────────────────────────
 
@@ -33,7 +33,7 @@ class _QueueWriter:
     """Replaces sys.stdout so print() in voice_controls shows in the debug panel."""
     def __init__(self, q: queue.Queue, original):
         self._q        = q
-        self._original = original   # keep original so we can still write to console
+        self._original = original
 
     def write(self, text: str):
         if text.strip():
@@ -51,111 +51,134 @@ class _QueueWriter:
             except Exception:
                 pass
 
-    def reconfigure(self, **kw):          # called by voice_controls at import
+    def reconfigure(self, **kw):
         if self._original and hasattr(self._original, "reconfigure"):
             self._original.reconfigure(**kw)
 
 
+# ── SSL context ───────────────────────────────────────────────────────────────
+
+def _ssl_ctx():
+    """SSL context that works frozen and in dev. Falls back to no-verify."""
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode    = ssl.CERT_NONE
+        return ctx
+
+
+def _urlopen(url: str, timeout: int = 10):
+    req = urllib.request.Request(url, headers={"User-Agent": "VoiceCommands/1.0"})
+    return urllib.request.urlopen(req, context=_ssl_ctx(), timeout=timeout)
+
+
 # ── Model auto-downloader ─────────────────────────────────────────────────────
 
-def _download_model_if_missing():
-    """If the vosk model isn't next to the exe, download and extract it.
-    Shows a progress window so the user knows what's happening."""
+def _start_model_download(root: tk.Tk, model_var: tk.StringVar,
+                           path_lbl: tk.Label, GRN: str, RED: str):
+    """
+    Called via root.after() so mainloop is already running.
+    Shows a progress window and downloads the model in a background thread.
+    UI updates happen via root.after() so tkinter never blocks.
+    """
     model_dir = pathlib.Path(user_config._exe_dir()) / MODEL_NAME
     if model_dir.is_dir():
-        return   # already present
-
-    # Ask first
-    answer = messagebox.askyesno(
-        "Voice model not found",
-        f"The speech recognition model is missing.\n\n"
-        f"Download it now? (~40 MB)\n\n"
-        f"This only happens once.",
-    )
-    if not answer:
         return
 
-    # Progress window
-    prog_win = tk.Toplevel()
-    prog_win.title("Downloading model…")
-    prog_win.resizable(False, False)
-    prog_win.configure(bg="#1e1e2e")
-    prog_win.grab_set()
+    if not messagebox.askyesno(
+        "Voice model not found",
+        "The speech recognition model (~40 MB) is missing.\n\n"
+        "Download it now? This only happens once.",
+        parent=root,
+    ):
+        return
 
-    tk.Label(prog_win, text="Downloading voice model…",
+    # ── Progress window ───────────────────────────────────────────────────────
+    prog = tk.Toplevel(root)
+    prog.title("Downloading model…")
+    prog.resizable(False, False)
+    prog.configure(bg="#1e1e2e")
+    prog.grab_set()
+    prog.protocol("WM_DELETE_WINDOW", lambda: None)   # prevent closing mid-download
+
+    tk.Label(prog, text="Downloading voice model…",
              bg="#1e1e2e", fg="#cdd6f4",
              font=("Segoe UI", 11)).pack(padx=30, pady=(20, 6))
 
     detail_var = tk.StringVar(value="Connecting…")
-    tk.Label(prog_win, textvariable=detail_var,
+    tk.Label(prog, textvariable=detail_var,
              bg="#1e1e2e", fg="#585b70",
              font=("Segoe UI", 9)).pack(padx=30)
 
-    bar = ttk.Progressbar(prog_win, length=320, mode="determinate")
+    bar = ttk.Progressbar(prog, length=340, mode="determinate", maximum=100)
     bar.pack(padx=30, pady=(10, 20))
 
-    err: list[str] = []
+    # ── Background download ───────────────────────────────────────────────────
+    dl_queue: queue.Queue = queue.Queue()
 
-    def _do_download():
+    def _download():
         try:
-            ctx = _ssl_ctx()
-            req = urllib.request.Request(MODEL_ZIP_URL, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, context=ctx, timeout=60) as resp:
-                total = int(resp.headers.get("Content-Length", 0))
+            with _urlopen(MODEL_ZIP_URL, timeout=120) as resp:
+                total      = int(resp.headers.get("Content-Length", 0))
                 downloaded = 0
-                chunks = io.BytesIO()
+                buf        = io.BytesIO()
                 while True:
                     chunk = resp.read(65536)
                     if not chunk:
                         break
-                    chunks.write(chunk)
+                    buf.write(chunk)
                     downloaded += len(chunk)
-                    if total:
-                        pct = downloaded / total * 100
-                        mb  = downloaded / 1_048_576
-                        prog_win.after(0, lambda p=pct, m=mb: (
-                            bar.config(value=p),
-                            detail_var.set(f"{m:.1f} MB downloaded…"),
-                        ))
+                    pct = (downloaded / total * 100) if total else 0
+                    mb  = downloaded / 1_048_576
+                    dl_queue.put(("progress", pct, f"{mb:.1f} MB / {total/1_048_576:.0f} MB"))
 
-            prog_win.after(0, lambda: detail_var.set("Extracting…"))
-            chunks.seek(0)
+            dl_queue.put(("extracting",))
+            buf.seek(0)
             dest = pathlib.Path(user_config._exe_dir())
-            with zipfile.ZipFile(chunks) as zf:
+            with zipfile.ZipFile(buf) as zf:
                 zf.extractall(dest)
 
-            # Save the detected path into config
             user_config.set_model_path(MODEL_NAME)
-            prog_win.after(0, prog_win.destroy)
-
+            dl_queue.put(("done",))
         except Exception as e:
-            err.append(str(e))
-            prog_win.after(0, prog_win.destroy)
+            dl_queue.put(("error", str(e)))
 
-    threading.Thread(target=_do_download, daemon=True).start()
-    prog_win.wait_window()   # blocks until download done or window closed
+    threading.Thread(target=_download, daemon=True).start()
 
-    if err:
-        messagebox.showerror("Download failed",
-                             f"Could not download the model:\n\n{err[0]}\n\n"
-                             "Use the Browse… button to locate it manually.")
+    # ── Poll queue, update UI via after() — no blocking calls ─────────────────
+    def _poll():
+        try:
+            while True:
+                msg = dl_queue.get_nowait()
+                if msg[0] == "progress":
+                    bar["value"] = msg[1]
+                    detail_var.set(msg[2])
+                elif msg[0] == "extracting":
+                    bar["value"] = 100
+                    detail_var.set("Extracting… please wait")
+                elif msg[0] == "done":
+                    prog.destroy()
+                    new = user_config.get_model_path()
+                    model_var.set(new)
+                    path_lbl.config(fg=GRN if pathlib.Path(new).is_dir() else RED)
+                    _log_queue.put("✓  Model downloaded and ready.\n")
+                    return
+                elif msg[0] == "error":
+                    prog.destroy()
+                    messagebox.showerror(
+                        "Download failed",
+                        f"{msg[1]}\n\nUse the Browse… button to locate the model manually.",
+                        parent=root,
+                    )
+                    return
+        except queue.Empty:
+            pass
+        root.after(200, _poll)
 
-
-# ── SSL context (PyInstaller doesn't bundle certs) ────────────────────────────
-
-def _ssl_ctx():
-    ctx = ssl.create_default_context()
-    try:
-        import certifi
-        ctx = ssl.create_default_context(cafile=certifi.where())
-    except ImportError:
-        ctx.check_hostname = False
-        ctx.verify_mode    = ssl.CERT_NONE
-    return ctx
-
-
-def _urlopen(url: str, timeout: int = 6):
-    return urllib.request.urlopen(url, context=_ssl_ctx(), timeout=timeout)
+    root.after(200, _poll)
 
 
 # ── Update helpers ─────────────────────────────────────────────────────────────
@@ -237,12 +260,10 @@ def _start_engine(root, status_var, b_start, b_stop):
         )
         return
 
-    # Redirect stdout → log queue before starting engine
     sys.stdout = _QueueWriter(_log_queue, sys.__stdout__)
-
-    _log_queue.put(f"▶  Starting engine…\n")
-    _log_queue.put(f"   Model path : {model_path}\n")
-    _log_queue.put(f"   Apps loaded: {list(user_config.get_apps().keys())}\n\n")
+    _log_queue.put("▶  Starting engine…\n")
+    _log_queue.put(f"   Model : {model_path}\n")
+    _log_queue.put(f"   Apps  : {', '.join(user_config.get_apps().keys())}\n\n")
 
     _stop_event    = threading.Event()
     _engine_thread = threading.Thread(
@@ -270,33 +291,27 @@ def _open_manager(root):
     win.focus_set()
 
 
-# ── Update UI ─────────────────────────────────────────────────────────────────
+# ── Update check UI ────────────────────────────────────────────────────────────
 
 def _check_updates_ui(root, status_var):
     status_var.set("Checking for updates…")
     root.update()
     latest = _fetch_latest_version()
     if latest is None:
-        messagebox.showinfo(
-            "Update check failed",
-            "Could not reach GitHub.\n\nCheck your internet connection.",
-            parent=root,
-        )
+        messagebox.showinfo("Update check failed",
+                            "Could not reach GitHub.\n\nCheck your internet connection.",
+                            parent=root)
         status_var.set("○ Stopped")
         return
     if _version_tuple(latest) > _version_tuple(VERSION):
-        if messagebox.askyesno(
-            "Update available",
-            f"Version {latest} is available (you have {VERSION}).\n\nInstall now?",
-            parent=root,
-        ):
+        if messagebox.askyesno("Update available",
+                               f"Version {latest} is available (you have {VERSION}).\n\nInstall now?",
+                               parent=root):
             _do_update(root, status_var)
         else:
             status_var.set("○ Stopped")
     else:
-        messagebox.showinfo("Up to date",
-                            f"You're on the latest version ({VERSION}).",
-                            parent=root)
+        messagebox.showinfo("Up to date", f"You're on the latest version ({VERSION}).", parent=root)
         status_var.set("○ Stopped")
 
 
@@ -311,7 +326,6 @@ def main():
     RED   = "#f38ba8"
     MUTED = "#585b70"
     LOG_BG = "#11111b"
-    LOG_FG = "#cdd6f4"
 
     root = tk.Tk()
     root.title(f"Voice Commands  v{VERSION}")
@@ -326,7 +340,7 @@ def main():
                          padx=14, pady=7, cursor="hand2", bd=0,
                          state=state, width=width)
 
-    # ── Header ────────────────────────────────────────────────────────────────
+    # Header
     hdr = tk.Frame(root, bg=ACC, pady=10)
     hdr.pack(fill="x")
     tk.Label(hdr, text="🎙  Voice Commands", bg=ACC, fg="#ffffff",
@@ -334,14 +348,14 @@ def main():
     tk.Label(hdr, text=f"v{VERSION}", bg=ACC, fg="#c8b8ff",
              font=("Segoe UI", 9)).pack()
 
-    # ── Status ────────────────────────────────────────────────────────────────
+    # Status
     card = tk.Frame(root, bg=CARD, padx=20, pady=12)
     card.pack(fill="x", padx=16, pady=(14, 0))
     status_var = tk.StringVar(value="○ Stopped")
     tk.Label(card, textvariable=status_var, bg=CARD, fg=GRN,
              font=("Segoe UI Semibold", 13)).pack()
 
-    # ── Engine buttons ────────────────────────────────────────────────────────
+    # Buttons
     btns = tk.Frame(root, bg=BG, pady=4)
     btns.pack(fill="x", padx=16)
 
@@ -350,7 +364,6 @@ def main():
                     lambda: _stop_engine(status_var, b_start, b_stop),
                     color=MUTED, state="disabled")
     b_start.config(command=lambda: _start_engine(root, status_var, b_start, b_stop))
-
     b_apps = mkbtn(btns, "⚙  Manage Apps",      lambda: _open_manager(root))
     b_upd  = mkbtn(btns, "🔄  Check for Updates",
                    lambda: _check_updates_ui(root, status_var), color=MUTED)
@@ -358,7 +371,7 @@ def main():
     for b in (b_start, b_stop, b_apps, b_upd):
         b.pack(pady=3, fill="x")
 
-    # ── Model path row ────────────────────────────────────────────────────────
+    # Model path row
     model_row = tk.Frame(root, bg=CARD, padx=12, pady=8)
     model_row.pack(fill="x", padx=16, pady=(10, 0))
     tk.Label(model_row, text="Vosk model path:", bg=CARD, fg=FG,
@@ -384,13 +397,12 @@ def main():
     mkbtn(path_row, "Browse…", _pick_model, color=MUTED, width=8).pack(
         side="right", padx=(6, 0))
 
-    # ── Debug panel ───────────────────────────────────────────────────────────
+    # Debug log panel
     debug_frame = tk.Frame(root, bg=BG)
     debug_frame.pack(fill="both", expand=True, padx=16, pady=(10, 0))
 
     debug_header = tk.Frame(debug_frame, bg=BG)
     debug_header.pack(fill="x")
-
     tk.Label(debug_header, text="Debug log", bg=BG, fg=MUTED,
              font=("Segoe UI Semibold", 9)).pack(side="left")
 
@@ -399,32 +411,26 @@ def main():
         log_box.delete("1.0", "end")
         log_box.config(state="disabled")
 
-    mkbtn(debug_header, "Clear", _clear_log, color=MUTED, width=6).pack(
-        side="right")
+    mkbtn(debug_header, "Clear", _clear_log, color=MUTED, width=6).pack(side="right")
 
     log_box = scrolledtext.ScrolledText(
-        debug_frame,
-        height=14, wrap="word",
-        bg=LOG_BG, fg=LOG_FG,
-        font=("Consolas", 9),
-        relief="flat", bd=0,
-        state="disabled",
+        debug_frame, height=14, wrap="word",
+        bg=LOG_BG, fg=FG, font=("Consolas", 9),
+        relief="flat", bd=0, state="disabled",
     )
     log_box.pack(fill="both", expand=True, pady=(4, 0))
-
-    # Colour tags for different message types
-    log_box.tag_config("hear",    foreground="#89b4fa")   # blue  — hearing
-    log_box.tag_config("cmd",     foreground="#a6e3a1")   # green — command matched
-    log_box.tag_config("low",     foreground="#f9e2af")   # amber — low confidence
-    log_box.tag_config("info",    foreground="#cdd6f4")   # white — general info
-    log_box.tag_config("error",   foreground="#f38ba8")   # red   — errors
-    log_box.tag_config("muted",   foreground="#585b70")   # grey  — diagnostics
+    log_box.tag_config("hear",  foreground="#89b4fa")
+    log_box.tag_config("cmd",   foreground="#a6e3a1")
+    log_box.tag_config("low",   foreground="#f9e2af")
+    log_box.tag_config("info",  foreground="#cdd6f4")
+    log_box.tag_config("error", foreground="#f38ba8")
+    log_box.tag_config("muted", foreground="#585b70")
 
     def _tag_for(text: str) -> str:
         t = text.lower()
-        if "hearing:" in t or "👂" in t:      return "hear"
-        if "command:" in t:                    return "cmd"
-        if "low confidence" in t or "💤" in t: return "low"
+        if "hearing:" in t or "👂" in t:       return "hear"
+        if "command:" in t:                     return "cmd"
+        if "low confidence" in t or "💤" in t:  return "low"
         if any(x in t for x in ("error", "failed", "traceback", "exception")):
             return "error"
         if any(x in t for x in ("──", "✓", "✗", "win —")):
@@ -433,42 +439,34 @@ def main():
 
     def _append_log(text: str):
         log_box.config(state="normal")
-        tag = _tag_for(text)
-        log_box.insert("end", text.rstrip("\n") + "\n", tag)
+        log_box.insert("end", text.rstrip("\n") + "\n", _tag_for(text))
         log_box.see("end")
         log_box.config(state="disabled")
 
-    # Poll the queue every 100 ms and write new lines into the log box
     def _poll_log():
         try:
             while True:
-                line = _log_queue.get_nowait()
-                _append_log(line)
+                _append_log(_log_queue.get_nowait())
         except queue.Empty:
             pass
         root.after(100, _poll_log)
 
     root.after(100, _poll_log)
 
-    # ── Footer ────────────────────────────────────────────────────────────────
+    # Footer
     tk.Label(root, text=f"Config: {user_config.config_path()}",
              bg=BG, fg=MUTED, font=("Segoe UI", 8), anchor="w").pack(
         fill="x", padx=16, pady=(6, 8))
 
-    # Auto-download model if missing (blocks until done, shows progress window)
-    _download_model_if_missing()
-
-    # Refresh model path label after potential download
-    new_path = user_config.get_model_path()
-    model_var.set(new_path)
-    path_lbl.config(fg=GRN if pathlib.Path(new_path).is_dir() else RED)
-
-    # Log startup info immediately
+    # Log startup info
     _log_queue.put(f"Voice Commands v{VERSION} started\n")
     _log_queue.put(f"Model path : {user_config.get_model_path()}\n")
     _log_queue.put(f"Model found: {pathlib.Path(user_config.get_model_path()).is_dir()}\n")
     _log_queue.put(f"Config     : {user_config.config_path()}\n")
-    _log_queue.put(f"Apps loaded: {', '.join(user_config.get_apps().keys())}\n\n")
+    _log_queue.put(f"Apps       : {', '.join(user_config.get_apps().keys())}\n\n")
+
+    # Trigger model download check after mainloop starts (500ms delay)
+    root.after(500, lambda: _start_model_download(root, model_var, path_lbl, GRN, RED))
 
     # Silent background update check
     def _bg_check():
