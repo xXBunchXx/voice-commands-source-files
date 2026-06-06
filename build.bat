@@ -5,7 +5,7 @@ echo Closing any running VoiceCommands instances...
 taskkill /F /IM VoiceCommands.exe >nul 2>&1
 timeout /t 1 /nobreak >nul
 
-pip install pyinstaller certifi >nul 2>&1
+pip install pyinstaller certifi pystray pillow >nul 2>&1
 
 pyinstaller ^
   --onefile ^
@@ -13,6 +13,8 @@ pyinstaller ^
   --name VoiceCommands ^
   --add-data "version.txt;." ^
   --collect-all vosk ^
+  --collect-all pystray ^
+  --hidden-import PIL ^
   main.py
 
 if errorlevel 1 (
