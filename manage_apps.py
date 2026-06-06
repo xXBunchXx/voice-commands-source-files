@@ -509,6 +509,30 @@ class AppManagerWindow(tk.Toplevel):
         self.e_proc.delete(0, "end")
         self._flash(f'✓  Added "{name}".')
 
+    def _on_rename(self):
+        old_name = self.combo_var.get()
+        new_name = self.e_rename.get().strip().lower()
+        if not old_name:
+            return
+        if not new_name:
+            messagebox.showwarning("Empty name", "Please enter a new name.", parent=self)
+            return
+        if new_name == old_name:
+            messagebox.showwarning("Same name", "The new name is the same as the current one.", parent=self)
+            return
+        if new_name in self._apps:
+            if not messagebox.askyesno("Overwrite?",
+                                       f'"{new_name}" already exists. Overwrite it?',
+                                       parent=self):
+                return
+        # Copy entry under new name, delete old
+        path = self._apps.get(old_name, "")
+        proc = self._procs.get(old_name, "")
+        user_config.delete_entry(old_name)
+        user_config.add_entry(new_name, path, proc)
+        self._reload()
+        self._flash(f'✓  Renamed "{old_name}" → "{new_name}".')
+
     def _on_delete(self):
         name = self.combo_var.get()
         if not name:
