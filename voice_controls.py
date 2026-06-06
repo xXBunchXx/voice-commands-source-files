@@ -48,9 +48,15 @@ _COMMAND_WORDS:    dict[str, str]             = user_config.DEFAULT_COMMAND_WORD
 _VOLUME_STEPS:     dict[str, int]             = user_config.DEFAULT_VOLUME_STEPS.copy()
 _CONTEXT_COMMANDS: dict[str, dict[str, str]]  = user_config.DEFAULT_CONTEXT_COMMANDS.copy()
 
+def _cw_all(key: str) -> list[str]:
+    """Return all trigger words for an action key (comma-separated aliases)."""
+    raw = _COMMAND_WORDS.get(key, user_config.DEFAULT_COMMAND_WORDS.get(key, key))
+    return [w.strip() for w in raw.split(",") if w.strip()]
+
 def _cw(key: str) -> str:
-    """Return the configured trigger word for an action key."""
-    return _COMMAND_WORDS.get(key, user_config.DEFAULT_COMMAND_WORDS.get(key, key))
+    """Return the primary (first) trigger word for an action key."""
+    parts = _cw_all(key)
+    return parts[0] if parts else key
 
 
 # ── Status overlay callback ───────────────────────────────────────────────
