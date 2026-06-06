@@ -534,6 +534,7 @@ def merge_explorer_windows() -> None:
         return
 
     print(f"🗂  Merging {len(wins)} Explorer windows into tabs…")
+    _status(f"Merging {len(wins)} Explorer windows into tabs")
 
     # Bring the first window to front as the target
     main = wins[0]
