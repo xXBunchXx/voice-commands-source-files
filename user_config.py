@@ -26,6 +26,53 @@ def _exe_dir() -> pathlib.Path:
 # Resolved against the exe directory at runtime so it works on any machine.
 DEFAULT_MODEL_FOLDER = "vosk-model-small-en-us-0.15"
 
+# ── Context command system ───────────────────────────────────────────────────
+# Maps process names to context labels used in CONTEXT_COMMANDS
+BROWSER_PROCS:  frozenset = frozenset({
+    "chrome.exe", "firefox.exe", "msedge.exe", "opera.exe",
+    "brave.exe", "vivaldi.exe", "waterfox.exe", "librewolf.exe",
+})
+EXPLORER_PROCS: frozenset = frozenset({"explorer.exe"})
+EDITOR_PROCS:   frozenset = frozenset({
+    "code.exe", "notepad.exe", "notepad++.exe", "atom.exe",
+    "sublime_text.exe", "wordpad.exe", "gedit.exe",
+})
+
+# {voice phrase: {context: keyboard shortcut}}
+# context can be "browser", "explorer", "editor", or "any"
+DEFAULT_CONTEXT_COMMANDS: dict[str, dict[str, str]] = {
+    # Browser / Explorer tabs
+    "close tab":       {"browser": "ctrl+w",        "explorer": "ctrl+w"},
+    "reload":          {"browser": "f5",             "explorer": "f5"},
+    "hard reload":     {"browser": "ctrl+shift+r"},
+    "new tab":         {"browser": "ctrl+t",         "explorer": "ctrl+t"},
+    "next tab":        {"browser": "ctrl+tab",       "explorer": "ctrl+tab"},
+    "previous tab":    {"browser": "ctrl+shift+tab", "explorer": "ctrl+shift+tab"},
+    "back":            {"browser": "alt+left",       "explorer": "alt+left"},
+    "forward":         {"browser": "alt+right",      "explorer": "alt+right"},
+    "address bar":     {"browser": "ctrl+l",         "explorer": "ctrl+l"},
+    "bookmark":        {"browser": "ctrl+d"},
+    "new window":      {"browser": "ctrl+n"},
+    "private":         {"browser": "ctrl+shift+n"},
+    "developer tools": {"browser": "f12"},
+    "pin tab":         {"browser": "ctrl+shift+p"},
+    # Text / editing
+    "find":            {"browser": "ctrl+f", "editor": "ctrl+f", "explorer": "ctrl+f"},
+    "redo":            {"any": "ctrl+y"},
+    "select all":      {"any": "ctrl+a"},
+    "zoom in":         {"browser": "ctrl+="},
+    "zoom out":        {"browser": "ctrl+-"},
+    "zoom reset":      {"browser": "ctrl+0"},
+    # System-wide
+    "screenshot":      {"any": "windows+shift+s"},
+    "lock":            {"any": "windows+l"},
+    "task view":       {"any": "windows+tab"},
+    "emoji":           {"any": "windows+."},
+    "clipboard":       {"any": "windows+v"},
+    "snip":            {"any": "windows+shift+s"},
+}
+
+
 # ── Customisable command words ────────────────────────────────────────────────
 DEFAULT_COMMAND_WORDS: dict[str, str] = {
     # Media
