@@ -128,7 +128,7 @@ def _schema_defaults() -> dict:
     return {
         "APPS":       DEFAULT_APPS,
         "PROC_NAMES": DEFAULT_PROC_NAMES,
-        "MODEL_PATH": DEFAULT_MODEL_PATH,
+        "MODEL_PATH": DEFAULT_MODEL_FOLDER,   # bare folder name — resolved at runtime
     }
 
 
