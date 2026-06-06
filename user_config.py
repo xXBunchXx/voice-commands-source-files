@@ -69,6 +69,10 @@ def load() -> dict:
             data.setdefault("APPS", {})["voice commands"] = vc_exe
             data.setdefault("PROC_NAMES", {})["voice commands"] = "VoiceCommands.exe"
             changed = True
+        # Fix legacy wrong proc name for settings
+        if data.get("PROC_NAMES", {}).get("settings") == "ms-settings:":
+            data["PROC_NAMES"]["settings"] = "SystemSettings.exe"
+            changed = True
         if changed:
             save(data)
         return data
