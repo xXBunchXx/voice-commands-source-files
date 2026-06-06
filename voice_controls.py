@@ -673,6 +673,7 @@ def undo_close() -> None:
         except Exception:
             pass
     print(f"↩  Cancelled close — {app_name} restored!")
+    _status(f"Undo — {app_name} restored")
 
 
 # ── DIAGNOSTIC ───────────────────────────────────────────────────────────
