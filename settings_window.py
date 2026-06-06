@@ -191,8 +191,8 @@ class SettingsWindow(tk.Toplevel):
 
         ACTIONS = [
             ("skip",           "Skip track"),
-            ("previous",       "Previous track"),
-            ("rewind",         "Restart current track"),
+            ("previous",       "Restart current track"),
+            ("rewind",         "Previous track"),
             ("play_pause",     "Play / Pause"),
             ("mute",           "Toggle mute"),
             ("copy",           "Copy  (Ctrl+C)"),
