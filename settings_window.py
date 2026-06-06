@@ -339,8 +339,8 @@ class SettingsWindow(tk.Toplevel):
         hdr = tk.Frame(list_frame, bg=CARD)
         hdr.pack(fill="x", padx=6, pady=(6, 2))
         for text, w in [("Voice phrase", 22), ("Context", 10), ("Shortcut", 16)]:
-            _lbl(hdr, text, fg=ACC, font=("Segoe UI Semibold", 8)).pack(
-                side="left", width=w*7)
+            _lbl(hdr, text, fg=ACC, font=("Segoe UI Semibold", 8),
+                 width=w, anchor="w").pack(side="left")
 
         # Scrollable list
         canvas = tk.Canvas(list_frame, bg=CARD, highlightthickness=0, height=260)
