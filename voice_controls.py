@@ -855,6 +855,8 @@ def handle_command(text: str) -> None:
             close_app(app) if app else print(f"  Say '{_cw('close')}' followed by an app name")
         else:
             print(f"  Say '{_cw('close')}' followed by an app name")
+    elif _try_context_command(text):
+        pass   # handled inside _try_context_command
 
 
 # ── ENGINE ───────────────────────────────────────────────────────────────
