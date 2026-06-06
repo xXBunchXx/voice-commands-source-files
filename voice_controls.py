@@ -320,6 +320,27 @@ def _windows_for_app(app_name: str) -> list[int]:
             pass
 
     win32gui.EnumWindows(_cb, None)
+
+    # UWP fallback: some apps (Settings, Calculator, etc.) run their UI inside
+    # ApplicationFrameHost.exe — if we found nothing by process, try matching by
+    # window title containing the app name.
+    if not found:
+        title_hint = app_name.lower()
+
+        def _cb_title(hwnd, _):
+            if not win32gui.IsWindowVisible(hwnd):
+                return
+            title = win32gui.GetWindowText(hwnd).lower()
+            if not title:
+                return
+            cls = win32gui.GetClassName(hwnd)
+            if cls in GLOBAL_EXCLUDE_CLASSES:
+                return
+            if title_hint in title or title in title_hint:
+                found.append(hwnd)
+
+        win32gui.EnumWindows(_cb_title, None)
+
     found.sort(key=_window_score, reverse=True)
     return found
 
