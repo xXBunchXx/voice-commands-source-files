@@ -252,11 +252,14 @@ class ScanDialog(tk.Toplevel):
         self._visible = [r for r in self._results
                          if query in r["display"].lower() or query in r["name"]]
         self._vars = []
+        self._name_vars = []
         for r in self._visible:
             v = tk.BooleanVar(value=False)
             v.trace_add("write", self._update_count)
             self._vars.append(v)
-            self._make_row(self._inner, r, v, r["name"] in existing)
+            nv = tk.StringVar(value=r["name"])
+            self._name_vars.append(nv)
+            self._make_row(self._inner, r, v, nv, r["name"] in existing)
         self._update_count()
 
     def _update_count(self, *_):
