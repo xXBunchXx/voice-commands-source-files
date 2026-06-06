@@ -133,9 +133,10 @@ def _engine_loop(stop_event, root, status_var, b_start, b_stop):
     except Exception as e:
         import traceback
         _log_queue.put(f"\n❌  ENGINE CRASHED:\n{traceback.format_exc()}\n")
+        _err = str(e)
         root.after(0, lambda: messagebox.showerror(
             "Engine error",
-            f"The voice engine crashed:\n\n{e}\n\nCheck the debug log for details.",
+            f"The voice engine crashed:\n\n{_err}\n\nCheck the debug log for details.",
             parent=root,
         ))
     finally:
