@@ -1,5 +1,5 @@
 """
-Manages per-user config stored in %APPDATA%\VoiceCommands\config.json.
+Manages per-user config stored in %APPDATA%/VoiceCommands/config.json.
 This file is NEVER overwritten by updates — each user keeps their own entries.
 """
 import json
