@@ -16,7 +16,7 @@ import user_config
 
 VERSION = "1.0.0"
 
-GITHUB_RAW     = "https://raw.githubusercontent.com/xXBunchXx/Voice-commands/master/"
+GITHUB_RAW     = "https://raw.githubusercontent.com/xXBunchXx/Voice-commands/main/"
 GITHUB_EXE_URL = "https://github.com/xXBunchXx/Voice-commands/releases/latest/download/VoiceCommands.exe"
 
 # ── Log queue — voice engine writes here, UI reads it ─────────────────────────
