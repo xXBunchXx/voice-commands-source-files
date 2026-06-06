@@ -7,6 +7,16 @@ timeout /t 1 /nobreak >nul
 
 pip install pyinstaller certifi pystray pillow >nul 2>&1
 
+:: ── Auto-increment patch version ─────────────────────────────────────────────
+echo Auto-incrementing version...
+powershell -NoProfile -Command ^
+  "$v = (Get-Content version.txt).Trim(); ^
+   $parts = $v -split '\.'; ^
+   $parts[2] = [int]$parts[2] + 1; ^
+   $newv = $parts -join '.'; ^
+   Set-Content version.txt $newv; ^
+   Write-Host ('Version: ' + $v + ' -> ' + $newv)"
+
 pyinstaller ^
   --onefile ^
   --noconsole ^
@@ -31,15 +41,19 @@ echo.
 echo Zipping dist\ into VoiceCommands.zip ...
 powershell -Command "Compress-Archive -Path 'dist\*' -DestinationPath 'VoiceCommands.zip' -Force"
 
+:: Read new version for commit message
+for /f "tokens=*" %%v in (version.txt) do set NEW_VER=%%v
+
 echo.
 echo Pushing to GitHub...
-git add VoiceCommands.zip dist\VoiceCommands.exe version.txt
-git commit -m "Release: update exe and zip"
+git add VoiceCommands.zip dist\VoiceCommands.exe version.txt main.py
+git commit -m "Release v%NEW_VER%"
 git push
 
 echo.
 echo ============================================================
-echo  Done! Share this download link with anyone who needs it:
+echo  Built and released v%NEW_VER%
+echo  Share this download link with anyone who needs it:
 echo  https://github.com/xXBunchXx/Voice-commands/raw/main/VoiceCommands.zip
 echo ============================================================
 echo.

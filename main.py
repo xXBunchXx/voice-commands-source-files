@@ -16,7 +16,18 @@ import pystray
 from PIL import Image, ImageDraw
 import user_config
 
-VERSION = "1.0.0"
+def _read_version() -> str:
+    # When frozen by PyInstaller, version.txt is extracted to sys._MEIPASS
+    if getattr(sys, "frozen", False):
+        base = pathlib.Path(sys._MEIPASS)
+    else:
+        base = pathlib.Path(__file__).resolve().parent
+    try:
+        return (base / "version.txt").read_text().strip()
+    except Exception:
+        return "0.0.0"
+
+VERSION = _read_version()
 
 GITHUB_RAW     = "https://raw.githubusercontent.com/xXBunchXx/Voice-commands/main/"
 GITHUB_EXE_URL = "https://github.com/xXBunchXx/Voice-commands/raw/main/dist/VoiceCommands.exe"
