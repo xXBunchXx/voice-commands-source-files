@@ -477,6 +477,7 @@ def open_or_focus(app_name: str) -> None:
         win32gui.ShowWindow(hwnd, 9)
         _set_foreground(hwnd)
         print(f"▶  Focused {app_name}!")
+        _status(f"Focusing {app_name}")
         return
     _launch(app_name)
 
