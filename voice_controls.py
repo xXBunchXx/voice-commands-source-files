@@ -659,6 +659,7 @@ def build_grammar() -> str:
         words.append(f"minimise {app_name}")
         words.append(f"maximise {app_name}")
         words.append(f"close {app_name}")
+        words.append(f"merge {app_name}")
         for pos in SNAP_POSITIONS:
             words.append(f"move {app_name} {pos}")
             words.append(f"open {app_name} {pos}")
