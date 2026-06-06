@@ -468,19 +468,38 @@ class SettingsWindow(tk.Toplevel):
         self._status.config(text=msg, fg=color)
         self.after(5000, lambda: self._status.config(text=""))
 
+    def _set_spin(self, widget, value):
+        """Directly set a Spinbox value, bypassing textvariable caching issues."""
+        widget.config(state="normal")
+        widget.delete(0, "end")
+        widget.insert(0, str(value))
+
     def _load(self):
         """Populate all fields from current config."""
-        self._conf_var.set(int(user_config.get_confidence_threshold() * 100))
-        self._cooldown_var.set(user_config.get_cooldown())
-        self._delay_var.set(user_config.get_close_delay())
+        try:
+            self._set_spin(self._conf_spin,
+                           int(user_config.get_confidence_threshold() * 100))
+            self._on_conf_change()
 
-        steps = user_config.get_volume_steps()
-        for word, var in self._vol_vars.items():
-            var.set(steps.get(word, user_config.DEFAULT_VOLUME_STEPS.get(word, 5)))
+            self._set_spin(self._cooldown_spin, user_config.get_cooldown())
+            self._set_spin(self._delay_spin,    user_config.get_close_delay())
 
-        words = user_config.get_command_words()
-        for key, var in self._cmd_vars.items():
-            var.set(words.get(key, user_config.DEFAULT_COMMAND_WORDS.get(key, "")))
+            steps = user_config.get_volume_steps()
+            for word, sp in self._vol_spins.items():
+                self._set_spin(sp, steps.get(word,
+                               user_config.DEFAULT_VOLUME_STEPS.get(word, 5)))
+
+            words = user_config.get_command_words()
+            for key, entry in self._cmd_entries.items():
+                entry.delete(0, "end")
+                entry.insert(0, words.get(key,
+                             user_config.DEFAULT_COMMAND_WORDS.get(key, "")))
+
+            self._reload_context_list()
+        except Exception as exc:
+            import traceback
+            self._flash(f"⚠ Settings load error: {exc}", RED)
+            traceback.print_exc()
 
 
 # ── Standalone ────────────────────────────────────────────────────────────────
