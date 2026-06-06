@@ -214,7 +214,8 @@ class SettingsWindow(tk.Toplevel):
                         foreground=FG, background=CARD, arrowcolor=FG)
         ttk.Combobox(card3, textvariable=self._overlay_pos,
                      state="readonly", width=18,
-                     values=["top-left", "top-center", "top-right",
+                     values=["near cursor",
+                             "top-left", "top-center", "top-right",
                              "bottom-left", "bottom-center", "bottom-right"]
                      ).grid(row=1, column=1, sticky="w", padx=(10, 0))
 
