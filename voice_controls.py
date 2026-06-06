@@ -454,6 +454,7 @@ def _launch(app_name: str) -> None:
         print(f"  Don't know how to open '{app_name}'")
         return
     print(f"▶  Opened {app_name}!")
+    _status(f"Opening {app_name}")
 
 
 def open_or_focus(app_name: str) -> None:
