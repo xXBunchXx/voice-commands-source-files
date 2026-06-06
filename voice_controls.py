@@ -715,41 +715,62 @@ def print_diagnostic() -> None:
 
 
 def build_grammar() -> str:
-    words = [
-        _cw("skip"), _cw("previous"), _cw("rewind"),
-        _cw("play_pause"), "play",          # always keep "play" as alias
-        _cw("open"), _cw("minimise"), _cw("close"),
-        f"{_cw('minimise')} all", f"{_cw('open')} all",
-        _cw("maximise"),
-        _cw("mute"),
-        _cw("diagnose"),
-        _cw("copy"), _cw("paste"),
-        _cw("save"),
-        _cw("enter"),
-        _cw("undo"),
-        _cw("merge"),
-        _cw("stop_engine"),
-        _cw("restart_engine"),
-        "[unk]",
-    ]
-    for app_name in APPS:
-        words.append(f"{_cw('open')} {app_name}")
-        words.append(f"{_cw('open')} new {app_name}")
-        words.append(f"{_cw('minimise')} {app_name}")
-        words.append(f"{_cw('maximise')} {app_name}")
-        words.append(f"{_cw('close')} {app_name}")
-        words.append(f"{_cw('merge')} {app_name}")
+    words = ["[unk]"]
+
+    # Simple commands — include every alias
+    for key in ("skip", "previous", "rewind", "play_pause", "mute",
+                "copy", "paste", "save", "enter", "undo", "diagnose",
+                "stop_engine", "restart_engine"):
+        words.extend(_cw_all(key))
+    words.append("play")   # permanent extra alias for play_pause
+
+    # Prefix commands — cross-product of every alias with every app / position
+    for ow in _cw_all("open"):
+        words.append(ow)
+        words.append(f"{ow} all")
+        for app in APPS:
+            words.append(f"{ow} {app}")
+            words.append(f"{ow} new {app}")
+            for pos in SNAP_POSITIONS:
+                words.append(f"{ow} {app} {pos}")
+
+    for mw in _cw_all("minimise"):
+        words.append(mw)
+        words.append(f"{mw} all")
+        for app in APPS:
+            words.append(f"{mw} {app}")
+
+    for xw in _cw_all("maximise"):
+        words.append(xw)
+        for app in APPS:
+            words.append(f"{xw} {app}")
+
+    for cw in _cw_all("close"):
+        words.append(cw)
+        for app in APPS:
+            words.append(f"{cw} {app}")
+
+    for mvw in _cw_all("move"):
         for pos in SNAP_POSITIONS:
-            words.append(f"{_cw('move')} {app_name} {pos}")
-            words.append(f"{_cw('open')} {app_name} {pos}")
-    for pos in SNAP_POSITIONS:
-        words.append(f"{_cw('move')} {pos}")
+            words.append(f"{mvw} {pos}")
+        for app in APPS:
+            for pos in SNAP_POSITIONS:
+                words.append(f"{mvw} {app} {pos}")
+
+    for mgw in _cw_all("merge"):
+        words.append(mgw)
+        for app in APPS:
+            words.append(f"{mgw} {app}")
+
+    # Volume
     for step in _VOLUME_STEPS:
         words.append(f"volume up {step}")
         words.append(f"volume down {step}")
+
     # Context-sensitive commands
     for phrase in _CONTEXT_COMMANDS:
         words.append(phrase)
+
     # Deduplicate while preserving order
     seen = set(); out = []
     for w in words:
