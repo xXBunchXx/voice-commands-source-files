@@ -256,6 +256,22 @@ def set_cooldown(value: float) -> None:
     data["COOLDOWN"] = round(max(0.0, value), 1)
     save(data)
 
+def get_overlay_enabled() -> bool:
+    return bool(load().get("OVERLAY_ENABLED", True))
+
+def set_overlay_enabled(enabled: bool) -> None:
+    data = load()
+    data["OVERLAY_ENABLED"] = bool(enabled)
+    save(data)
+
+def get_overlay_position() -> str:
+    return load().get("OVERLAY_POSITION", "bottom-right")
+
+def set_overlay_position(pos: str) -> None:
+    data = load()
+    data["OVERLAY_POSITION"] = pos
+    save(data)
+
 def get_context_commands() -> dict[str, dict[str, str]]:
     stored = load().get("CONTEXT_COMMANDS", {})
     merged = {**DEFAULT_CONTEXT_COMMANDS}
