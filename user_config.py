@@ -151,10 +151,43 @@ def set_model_path(path: str) -> None:
 def get_close_delay() -> int:
     return int(load().get("CLOSE_DELAY", 5))
 
-
 def set_close_delay(seconds: int) -> None:
     data = load()
     data["CLOSE_DELAY"] = max(1, int(seconds))
+    save(data)
+
+def get_command_words() -> dict[str, str]:
+    stored = load().get("COMMAND_WORDS", {})
+    return {**DEFAULT_COMMAND_WORDS, **stored}
+
+def set_command_words(words: dict[str, str]) -> None:
+    data = load()
+    data["COMMAND_WORDS"] = words
+    save(data)
+
+def get_volume_steps() -> dict[str, int]:
+    stored = load().get("VOLUME_STEPS", {})
+    return {**DEFAULT_VOLUME_STEPS, **stored}
+
+def set_volume_steps(steps: dict[str, int]) -> None:
+    data = load()
+    data["VOLUME_STEPS"] = steps
+    save(data)
+
+def get_confidence_threshold() -> float:
+    return float(load().get("CONFIDENCE_THRESHOLD", 0.65))
+
+def set_confidence_threshold(value: float) -> None:
+    data = load()
+    data["CONFIDENCE_THRESHOLD"] = round(max(0.0, min(1.0, value)), 2)
+    save(data)
+
+def get_cooldown() -> float:
+    return float(load().get("COOLDOWN", 1.5))
+
+def set_cooldown(value: float) -> None:
+    data = load()
+    data["COOLDOWN"] = round(max(0.0, value), 1)
     save(data)
 
 
