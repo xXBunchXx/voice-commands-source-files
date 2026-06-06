@@ -643,6 +643,7 @@ def close_app(app_name: str) -> None:
     _pending_close = {"app": app_name, "hwnds": hwnds}
 
     print(f"⏳  Closing {app_name} in {delay}s — say 'undo' to cancel!")
+    _status(f"Closing {app_name} in {delay}s  —  say '{_cw('undo')}' to cancel")
 
     def _timer():
         global _pending_close
