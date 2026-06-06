@@ -188,6 +188,7 @@ def change_volume(direction: str, step_word: str) -> None:
     arrow = "🔊▲" if delta > 0 else "🔉▼"
     print(f"{arrow}  Volume {'up' if delta > 0 else 'down'} {abs(pct)}%"
           f" → {new_level*100:.0f}%")
+    _status(f"Volume {'up' if delta > 0 else 'down'} {abs(pct)}%  →  {new_level*100:.0f}%")
 
 
 # REMOVE this:
