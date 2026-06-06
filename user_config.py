@@ -81,7 +81,21 @@ def get_proc_names() -> dict[str, str]:
 
 
 def get_model_path() -> str:
-    return load().get("MODEL_PATH", DEFAULT_MODEL_PATH)
+    """Return the absolute model path.
+
+    The value stored in config is either:
+    - An absolute path the user browsed to manually, OR
+    - A bare folder name (e.g. 'vosk-model-small-en-us-0.15') treated as
+      relative to the exe/script directory — works for everyone who puts
+      the model next to the exe.
+    """
+    raw = load().get("MODEL_PATH", DEFAULT_MODEL_FOLDER)
+    p = pathlib.Path(raw)
+    if p.is_absolute():
+        return str(p)
+    # Relative — resolve next to the exe
+    resolved = _exe_dir() / p
+    return str(resolved)
 
 
 def set_model_path(path: str) -> None:
