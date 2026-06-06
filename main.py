@@ -221,6 +221,77 @@ def _check_updates_ui(root, status_var):
         status_var.set("○ Stopped")
 
 
+# ── System tray ───────────────────────────────────────────────────────────────
+
+_tray_icon: pystray.Icon | None = None
+
+
+def _make_tray_image() -> Image.Image:
+    """Draw a simple mic icon for the tray."""
+    size = 64
+    img  = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d    = ImageDraw.Draw(img)
+    # Purple background circle
+    d.ellipse([0, 0, size - 1, size - 1], fill="#7c6af7")
+    # Simple mic body (white rounded rect)
+    d.rounded_rectangle([22, 10, 42, 38], radius=8, fill="white")
+    # Mic stand
+    d.line([(32, 38), (32, 50)], fill="white", width=3)
+    d.line([(22, 50), (42, 50)], fill="white", width=3)
+    return img
+
+
+def _setup_tray(root: tk.Tk) -> pystray.Icon:
+    def _on_show(icon, item):
+        root.after(0, _show_window)
+
+    def _on_exit(icon, item):
+        icon.stop()
+        root.after(0, _quit_app)
+
+    menu = pystray.Menu(
+        pystray.MenuItem("Show Voice Commands", _on_show, default=True),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem("Exit", _on_exit),
+    )
+    icon = pystray.Icon("VoiceCommands", _make_tray_image(),
+                        "Voice Commands", menu)
+    threading.Thread(target=icon.run, daemon=True).start()
+    return icon
+
+
+def _hide_window(root: tk.Tk) -> None:
+    global _tray_icon
+    root.withdraw()
+    if _tray_icon is None:
+        _tray_icon = _setup_tray(root)
+
+
+def _show_window() -> None:
+    """Restore the window from tray."""
+    if _root_ref is not None:
+        _root_ref.deiconify()
+        _root_ref.lift()
+        _root_ref.focus_force()
+
+
+def _quit_app() -> None:
+    """Stop engine, remove tray icon, destroy window."""
+    global _tray_icon
+    _stop_event.set()
+    if _tray_icon:
+        try:
+            _tray_icon.stop()
+        except Exception:
+            pass
+        _tray_icon = None
+    if _root_ref is not None:
+        _root_ref.destroy()
+
+
+_root_ref: tk.Tk | None = None   # set inside main() so tray callbacks can reach it
+
+
 # ── Main window ───────────────────────────────────────────────────────────────
 
 def main():
