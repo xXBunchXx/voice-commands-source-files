@@ -640,12 +640,12 @@ def handle_command(text: str) -> None:
         print("⏭  Skipping track!")
         keyboard.send("next track")
     elif text == _cw("previous"):
-        print("⏮  Previous track!")
-        keyboard.send("previous track")
-    elif text == _cw("rewind"):
         print("🔁  Restarting track!")
         keyboard.send("previous track")
         time.sleep(0.05)
+        keyboard.send("previous track")
+    elif text == _cw("rewind"):
+        print("⏮  Previous track!")
         keyboard.send("previous track")
     elif text in (_cw("play_pause"), "play"):
         print("⏸  Toggling playback!")
