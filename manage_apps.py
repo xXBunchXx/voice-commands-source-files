@@ -484,6 +484,49 @@ class AppManagerWindow(tk.Toplevel):
         self.e_proc.delete(0, "end"); self.e_proc.insert(0, proc)
         self._flash(f'Auto-filled from {p.name} — edit the name if needed, then click Add Entry.')
 
+    def _add_website(self):
+        dlg = _SimpleDialog(self,
+            title="Add Website",
+            icon="🌐",
+            fields=[
+                ("Voice command name", "e.g.  youtube"),
+                ("URL", "e.g.  https://www.youtube.com"),
+            ])
+        self.wait_window(dlg)
+        if not dlg.result:
+            return
+        name, url = dlg.result
+        name = name.strip().lower()
+        url  = url.strip()
+        if not name or not url:
+            return
+        if not url.startswith(("http://", "https://")):
+            url = "https://" + url
+        user_config.add_entry(name, url, "")   # empty proc — open-only
+        self._reload()
+        self._flash(f'✓  Added website "{name}" → {url}')
+
+    def _add_folder(self):
+        folder = filedialog.askdirectory(title="Select folder to open", parent=self)
+        if not folder:
+            return
+        # Suggest a name from the folder's last component
+        suggested = pathlib.Path(folder).name.lower().replace("_", " ").replace("-", " ")
+        dlg = _SimpleDialog(self,
+            title="Add Folder",
+            icon="📁",
+            fields=[("Voice command name", f"e.g.  {suggested}")],
+            prefill=[suggested])
+        self.wait_window(dlg)
+        if not dlg.result:
+            return
+        name = dlg.result[0].strip().lower()
+        if not name:
+            return
+        user_config.add_entry(name, folder, "explorer.exe")
+        self._reload()
+        self._flash(f'✓  Added folder "{name}" → {folder}')
+
     def _open_scan(self):
         dlg = ScanDialog(self)
         dlg.grab_set()
