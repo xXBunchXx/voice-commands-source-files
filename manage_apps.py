@@ -267,27 +267,36 @@ class ScanDialog(tk.Toplevel):
         self._count_lbl.config(text=f"{n} selected" if n else "")
 
     def _add_selected(self):
-        to_add = [r for r, v in zip(self._visible, self._vars) if v.get()]
-        if not to_add:
+        selected = [(r, nv.get().strip().lower())
+                    for r, v, nv in zip(self._visible, self._vars, self._name_vars)
+                    if v.get()]
+        if not selected:
             messagebox.showwarning("Nothing selected",
                                    "Tick at least one app to add.", parent=self)
             return
+        # Validate names
+        bad = [name for _, name in selected if not name]
+        if bad:
+            messagebox.showwarning("Empty name",
+                                   "One or more voice names are empty. "
+                                   "Please fill them in.", parent=self)
+            return
         # Check for name conflicts
         existing = user_config.get_apps()
-        conflicts = [r for r in to_add if r["name"] in existing]
+        conflicts = [name for _, name in selected if name in existing]
         if conflicts:
-            names = ", ".join(f'"{r["name"]}"' for r in conflicts)
+            names = ", ".join(f'"{n}"' for n in conflicts)
             if not messagebox.askyesno(
                     "Overwrite?",
                     f"These voice names already exist: {names}\n\nOverwrite them?",
                     parent=self):
                 return
-        for r in to_add:
-            user_config.add_entry(r["name"], r["path"], r["proc"])
+        for r, name in selected:
+            user_config.add_entry(name, r["path"], r["proc"])
         messagebox.showinfo("Done",
-                            f"Added {len(to_add)} app(s).\n\n" +
-                            "\n".join(f'  • {r["display"]} → "{r["name"]}"'
-                                      for r in to_add),
+                            f"Added {len(selected)} app(s).\n\n" +
+                            "\n".join(f'  • {r["display"]} → "{name}"'
+                                      for r, name in selected),
                             parent=self)
         self.destroy()
 
