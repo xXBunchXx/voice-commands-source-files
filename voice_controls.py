@@ -571,18 +571,19 @@ def print_diagnostic() -> None:
 
 def build_grammar() -> str:
     words = [
-        "skip", "restart", "rewind", "pause", "play",
+        _cw("skip"), _cw("previous"), _cw("rewind"),
+        _cw("play_pause"), "play",          # always keep "play" as alias
         "open", "minimise", "close",
-        "minimise all", "open all",
+        _cw("minimise_all"), _cw("open_all"),
         "maximise",
-        "mute",
-        "diagnose",
-        "copy", "paste",
-        "save",
-        "enter",
-        "undo",
-        "close voice commands",
-        "restart voice commands",
+        _cw("mute"),
+        _cw("diagnose"),
+        _cw("copy"), _cw("paste"),
+        _cw("save"),
+        _cw("enter"),
+        _cw("undo"),
+        _cw("stop_engine"),
+        _cw("restart_engine"),
         "[unk]",
     ]
     for app_name in APPS:
@@ -595,11 +596,16 @@ def build_grammar() -> str:
             words.append(f"move {app_name} {pos}")
             words.append(f"open {app_name} {pos}")
     for pos in SNAP_POSITIONS:
-        words.append(f"move {pos}")     # snap current window with no app named
-    for step in VOLUME_STEPS:
+        words.append(f"move {pos}")
+    for step in _VOLUME_STEPS:
         words.append(f"volume up {step}")
         words.append(f"volume down {step}")
-    return json.dumps(words)
+    # Deduplicate while preserving order
+    seen = set(); out = []
+    for w in words:
+        if w not in seen:
+            seen.add(w); out.append(w)
+    return json.dumps(out)
 
 
 def average_confidence(result: dict) -> float:
