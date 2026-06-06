@@ -501,6 +501,9 @@ class SettingsWindow(tk.Toplevel):
     def _load(self):
         """Populate all fields from current config."""
         try:
+            self._overlay_enabled.set(user_config.get_overlay_enabled())
+            self._overlay_pos.set(user_config.get_overlay_position())
+
             self._set_spin(self._conf_spin,
                            int(user_config.get_confidence_threshold() * 100))
             self._on_conf_change()
