@@ -127,18 +127,15 @@ def _do_update(root: tk.Tk, status_var: tk.StringVar) -> None:
             bat = exe_path.with_name("_vc_updater.bat")
             bat.write_text(
                 f'@echo off\n'
-                f'timeout /t 3 /nobreak >nul\n'
+                f'timeout /t 5 /nobreak >nul\n'
                 f'move /Y "{new_exe}" "{exe_path}"\n'
+                f'timeout /t 3 /nobreak >nul\n'
+                f'start "" "{exe_path}"\n'
                 f'del "%~f0"\n',
                 encoding="ascii",
             )
             subprocess.Popen(["cmd", "/c", str(bat)],
                              creationflags=subprocess.CREATE_NO_WINDOW)
-            root.after(0, lambda: messagebox.showinfo(
-                "Update complete",
-                f"Voice Commands has been updated.\n\nPlease reopen the app.",
-                parent=root,
-            ))
             root.after(0, root.destroy)
         except Exception as e:
             _err = str(e)
