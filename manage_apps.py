@@ -480,7 +480,10 @@ class AppManagerWindow(tk.Toplevel):
         self.preview.config(text=f"  Path : {path}\n  Proc : {proc}")
 
     def _on_select(self, _=None):
-        self._show_preview(self.combo_var.get())
+        name = self.combo_var.get()
+        self._show_preview(name)
+        self.e_rename.delete(0, "end")
+        self.e_rename.insert(0, name)
 
     def _flash(self, msg: str, color="#a6e3a1"):
         self.status.config(text=msg, fg=color)
