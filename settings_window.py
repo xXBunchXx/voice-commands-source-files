@@ -293,16 +293,16 @@ class SettingsWindow(tk.Toplevel):
             ("restart_engine", "Restart voice commands"),
         ]
 
-        self._cmd_vars: dict[str, tk.StringVar] = {}
+        self._cmd_entries: dict[str, tk.Entry] = {}
         for i, (key, label) in enumerate(ACTIONS):
             row, col = divmod(i, 2)
             cell = tk.Frame(card, bg=CARD)
             cell.grid(row=row, column=col, sticky="ew", padx=(0, 16), pady=3)
             card.columnconfigure(col, weight=1)
             _lbl(cell, label, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w")
-            v = tk.StringVar()
-            self._cmd_vars[key] = v
-            _inp(cell, width=22, textvariable=v).pack(anchor="w")
+            e = _inp(cell, width=22)
+            e.pack(anchor="w")
+            self._cmd_entries[key] = e
 
         self._make_save_btn(frame, self._save_commands)
 
