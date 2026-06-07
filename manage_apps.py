@@ -756,11 +756,12 @@ class AppManagerWidget(tk.Frame):
         self.e_edit_proc.delete(0, "end"); self.e_edit_proc.insert(0, p.name)
 
     def _on_save_edit(self):
-        """Save edited path, proc and spoken name for the selected entry."""
+        """Save edited path, proc, spoken name and number slot for the selected entry."""
         name   = self.combo_var.get()
         path   = self.e_edit_path.get().strip()
         proc   = self.e_edit_proc.get().strip()
         spoken = self.e_edit_spoken.get().strip().lower()
+        slot   = self._slot_var.get()
         if not name:
             return
         if not path or not proc:
@@ -770,10 +771,16 @@ class AppManagerWidget(tk.Frame):
             return
         user_config.add_entry(name, path, proc)
         user_config.set_spoken_name(name, spoken)
+        # Save slot (pass empty string to clear)
+        number_word = slot if slot != "— none —" else ""
+        user_config.set_app_slot(number_word, name)
         self._reload()
         self.combo.set(name)
         self._show_preview(name)
-        note = f'  (say "{spoken}")' if spoken else ""
+        parts = []
+        if spoken: parts.append(f'say "{spoken}"')
+        if number_word: parts.append(f'slot {number_word}')
+        note = f'  ({", ".join(parts)})' if parts else ""
         self._flash(f'✓  Updated "{name}"{note}.')
 
     def _flash(self, msg: str, color=GRN):
