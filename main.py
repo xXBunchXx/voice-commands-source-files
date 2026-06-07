@@ -118,7 +118,7 @@ def _do_update(root: tk.Tk, status_var: tk.StringVar, latest_version: str) -> No
     def _download():
         try:
             root.after(0, lambda: status_var.set("Downloading update…"))
-            with _urlopen(GITHUB_EXE_URL, timeout=120) as resp:
+            with _urlopen(exe_url, timeout=120) as resp:
                 total = int(resp.headers.get("Content-Length", 0))
                 downloaded = 0
                 chunk_size = 65536
