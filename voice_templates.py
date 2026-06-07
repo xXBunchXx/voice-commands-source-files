@@ -179,6 +179,14 @@ def _compute_mfcc(audio_bytes: bytes) -> np.ndarray | None:
         if len(audio) < _FRAME_LEN:
             return None
 
+        # Energy gate: skip template matching if the signal is too quiet
+        # to be real speech.  Fan / PC background noise typically has RMS
+        # well below 0.02 (2 % of full scale); voiced speech is usually
+        # 0.05 – 0.3.  This prevents the matcher from firing on ambient noise.
+        rms = float(np.sqrt(np.mean(audio ** 2)))
+        if rms < _MIN_SPEECH_RMS:
+            return None
+
         # Pre-emphasis
         audio = np.append(audio[0], audio[1:] - 0.97 * audio[:-1])
 
