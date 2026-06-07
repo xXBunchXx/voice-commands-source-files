@@ -127,9 +127,11 @@ def _do_update(root: tk.Tk, status_var: tk.StringVar) -> None:
             bat = exe_path.with_name("_vc_updater.bat")
             bat.write_text(
                 f'@echo off\n'
-                f'timeout /t 5 /nobreak >nul\n'
-                f'move /Y "{new_exe}" "{exe_path}"\n'
-                f'timeout /t 3 /nobreak >nul\n'
+                f':wait\n'
+                f'timeout /t 2 /nobreak >nul\n'
+                f'move /Y "{new_exe}" "{exe_path}" >nul 2>&1\n'
+                f'if errorlevel 1 goto wait\n'
+                f'timeout /t 1 /nobreak >nul\n'
                 f'start "" "{exe_path}"\n'
                 f'del "%~f0"\n',
                 encoding="ascii",
