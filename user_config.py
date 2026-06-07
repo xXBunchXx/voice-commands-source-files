@@ -169,6 +169,14 @@ def load() -> dict:
             save(data)
         return data
     except (json.JSONDecodeError, OSError):
+        # Back up the broken file so the user can recover it, then write
+        # clean defaults.  Never silently discard a potentially good file.
+        try:
+            bad = CONFIG_FILE.with_suffix(".broken")
+            if CONFIG_FILE.exists():
+                CONFIG_FILE.rename(bad)
+        except Exception:
+            pass
         _write_defaults()
         return load()
 
