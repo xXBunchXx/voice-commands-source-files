@@ -36,26 +36,30 @@ VOSK_MODELS = [
     {
         "name":  "vosk-model-small-en-us-0.15",
         "size":  "40 MB",
-        "desc":  "Small & fast — good for commands, low RAM.  (Default)",
+        "desc":  "Small & fast — low RAM, good grammar accuracy.  (Default)",
         "url":   "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip",
+        "recommended": True,
     },
     {
         "name":  "vosk-model-en-us-0.22-lgraph",
         "size":  "128 MB",
-        "desc":  "Medium — better accuracy, still manageable.",
+        "desc":  "Medium lattice-graph model — noticeably more accurate, still grammar-friendly.  ★ Best upgrade",
         "url":   "https://alphacephei.com/vosk/models/vosk-model-en-us-0.22-lgraph.zip",
+        "recommended": True,
     },
     {
         "name":  "vosk-model-en-us-daanzu-20200905",
         "size":  "800 MB",
-        "desc":  "Large command-tuned model — very accurate for short phrases.",
+        "desc":  "Large model tuned for short spoken commands — high accuracy, grammar-friendly.",
         "url":   "https://alphacephei.com/vosk/models/vosk-model-en-us-daanzu-20200905.zip",
+        "recommended": True,
     },
     {
         "name":  "vosk-model-en-us-0.22",
         "size":  "1.8 GB",
-        "desc":  "Largest English model — highest accuracy, needs ~2 GB RAM.",
-        "url":   "https://alphacephei.com/vosk/models/vosk-model-en-us-0.22.zip",
+        "desc":  "Full large language model — highest raw accuracy but treats grammar as a soft hint "
+                 "(random words may slip through).  Use the lgraph or daanzu model instead for commands.",
+        "recommended": False,
     },
 ]
 
