@@ -446,7 +446,8 @@ class AppManagerWidget(tk.Frame):
         self.e_name.delete(0, "end"); self.e_name.insert(0, _to_voice_name(p.stem))
         self.e_path.delete(0, "end"); self.e_path.insert(0, str(p))
         self.e_proc.delete(0, "end"); self.e_proc.insert(0, p.name)
-        self._flash(f"Auto-filled from {p.name} — edit the name if needed, then click Add Entry.")
+        self.e_spoken.delete(0, "end")
+        self._flash(f"Auto-filled from {p.name} — fill in Spoken name if the name is hard to say, then Add Entry.")
 
     def _add_website(self):
         def on_submit(vals):
