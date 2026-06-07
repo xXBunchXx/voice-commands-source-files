@@ -485,13 +485,7 @@ def main():
                          padx=14, pady=7, cursor="hand2", bd=0,
                          state=state, width=width)
 
-    # ── Header ─────────────────────────────────────────────────────────────────
-    hdr = tk.Frame(root, bg=ACC, pady=10)
-    hdr.pack(fill="x")
-    tk.Label(hdr, text="🎙  Echo", bg=ACC, fg="#ffffff",
-             font=("Segoe UI Semibold", 14)).pack()
-    tk.Label(hdr, text=f"v{VERSION}", bg=ACC, fg="#ffffff",
-             font=("Segoe UI", 9)).pack()
+
 
     # ── Notebook ───────────────────────────────────────────────────────────────
     style = ttk.Style(root)
