@@ -1,8 +1,10 @@
 """
 Settings widget — embeds directly in the main window as a tab (SettingsWidget).
 """
+import threading
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
+import pathlib
 import user_config
 
 BG       = "#1e1e2e"
@@ -28,6 +30,34 @@ _MOD_MAP = {
     "alt_gr":    "altgr",
 }
 _MODS = frozenset(_MOD_MAP.values()) | frozenset(_MOD_MAP.keys())
+
+# Curated list of well-known Vosk English models
+VOSK_MODELS = [
+    {
+        "name":  "vosk-model-small-en-us-0.15",
+        "size":  "40 MB",
+        "desc":  "Small & fast — good for commands, low RAM.  (Default)",
+        "url":   "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip",
+    },
+    {
+        "name":  "vosk-model-en-us-0.22-lgraph",
+        "size":  "128 MB",
+        "desc":  "Medium — better accuracy, still manageable.",
+        "url":   "https://alphacephei.com/vosk/models/vosk-model-en-us-0.22-lgraph.zip",
+    },
+    {
+        "name":  "vosk-model-en-us-daanzu-20200905",
+        "size":  "800 MB",
+        "desc":  "Large command-tuned model — very accurate for short phrases.",
+        "url":   "https://alphacephei.com/vosk/models/vosk-model-en-us-daanzu-20200905.zip",
+    },
+    {
+        "name":  "vosk-model-en-us-0.22",
+        "size":  "1.8 GB",
+        "desc":  "Largest English model — highest accuracy, needs ~2 GB RAM.",
+        "url":   "https://alphacephei.com/vosk/models/vosk-model-en-us-0.22.zip",
+    },
+]
 
 
 def _norm_key(sym: str) -> str:
@@ -72,8 +102,8 @@ def _spin(parent, from_, to, var, width=6):
                       relief="flat", font=("Segoe UI", 10))
 
 def _section(parent, title):
-    f = tk.Frame(parent, bg=BG)
-    tk.Label(f, text=title, bg=BG, fg=ACC,
+    f = tk.Frame(parent, bg=parent["bg"] if hasattr(parent, "__getitem__") else BG)
+    tk.Label(f, text=title, bg=f["bg"], fg=ACC,
              font=("Segoe UI Semibold", 10)).pack(anchor="w")
     tk.Frame(f, bg=ACC, height=1).pack(fill="x", pady=(2, 8))
     return f
@@ -87,6 +117,18 @@ def _btn(parent, text, cmd, color=ACC, **kw):
                      activeforeground="#fff", relief="flat",
                      font=("Segoe UI Semibold", 9), cursor="hand2",
                      padx=10, pady=5, **kw)
+
+
+def _all_context_values() -> list[str]:
+    """Return all values valid for the context dropdown: known + custom groups + proc names."""
+    vals = list(_KNOWN_CONTEXTS)
+    groups = sorted(user_config.get_custom_groups().keys())
+    if groups:
+        vals += groups
+    procs = sorted(set(user_config.get_proc_names().values()))
+    if procs:
+        vals += procs
+    return vals
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -107,7 +149,7 @@ class SettingsWidget(tk.Frame):
         style.theme_use("clam")
         style.configure("TNotebook",      background=BG, borderwidth=0)
         style.configure("TNotebook.Tab",  background=CARD, foreground=FG,
-                        padding=[14, 6], font=("Segoe UI Semibold", 9))
+                        padding=[12, 6], font=("Segoe UI Semibold", 9))
         style.map("TNotebook.Tab",
                   background=[("selected", ACC)],
                   foreground=[("selected", "#ffffff")])
@@ -119,6 +161,8 @@ class SettingsWidget(tk.Frame):
         self._tab_volume(nb)
         self._tab_commands(nb)
         self._tab_context(nb)
+        self._tab_groups(nb)
+        self._tab_models(nb)
 
         self._status = tk.Label(self, text="", bg=BG, fg=GRN,
                                 font=("Segoe UI", 9), anchor="w")
@@ -174,9 +218,6 @@ class SettingsWidget(tk.Frame):
 
         _lbl(card3, "Position:", fg=MUTED).grid(row=1, column=0, sticky="w", pady=(8, 0))
         self._overlay_pos = tk.StringVar()
-        style2 = ttk.Style(card3); style2.theme_use("clam")
-        style2.configure("TCombobox", fieldbackground=ENTRY_BG, foreground=FG,
-                         background=CARD, arrowcolor=FG)
         ttk.Combobox(card3, textvariable=self._overlay_pos,
                      state="readonly", width=18,
                      values=["bottom-right", "bottom-center", "bottom-left",
@@ -315,15 +356,14 @@ class SettingsWidget(tk.Frame):
         frame = tk.Frame(nb, bg=BG)
         nb.add(frame, text="🖱  Context")
 
-        # Top bar
         top = tk.Frame(frame, bg=BG)
         top.pack(fill="x", padx=4, pady=(8, 4))
         _lbl(top,
-             "Commands that only fire when the right app is focused, grouped by context.",
+             "Commands grouped by context.  "
+             "Context can be a built-in group, a custom group, or any .exe name.",
              fg=MUTED, font=("Segoe UI", 8)).pack(side="left")
         _btn(top, "➕  Add Command", self._add_context_cmd).pack(side="right")
 
-        # Scrollable grouped list
         list_outer = tk.Frame(frame, bg=CARD)
         list_outer.pack(fill="both", expand=True, padx=4, pady=(0, 4))
 
@@ -350,7 +390,6 @@ class SettingsWidget(tk.Frame):
         self._ctx_canvas.bind("<MouseWheel>", _scroll)
         self._ctx_inner.bind("<MouseWheel>", _scroll)
 
-        # Bottom buttons
         bot = tk.Frame(frame, bg=BG)
         bot.pack(fill="x", padx=4, pady=(0, 4))
         _btn(bot, "🗑  Delete Selected", self._del_selected_ctx,
@@ -359,32 +398,43 @@ class SettingsWidget(tk.Frame):
              color=MUTED).pack(side="right")
 
     def _reload_context_list(self):
-        """Rebuild the grouped context list."""
         for w in self._ctx_inner.winfo_children():
             w.destroy()
-        self._ctx_row_vars = []   # [(BoolVar, phrase, context)]
+        self._ctx_row_vars = []
 
-        cmds = user_config.get_context_commands()
+        cmds   = user_config.get_context_commands()
+        groups = user_config.get_custom_groups()
 
-        # Build groups dict: known contexts first, then custom .exe names
-        groups: dict[str, list] = {c: [] for c in _KNOWN_CONTEXTS}
+        # Build display groups: known contexts, custom groups, then individual procs
+        group_order: dict[str, list] = {c: [] for c in _KNOWN_CONTEXTS}
+        for gname in sorted(groups.keys()):
+            group_order.setdefault(gname, [])
+
         for phrase, contexts in sorted(cmds.items()):
             for ctx, value in contexts.items():
-                if ctx in _KNOWN_CONTEXTS:
-                    groups[ctx].append((phrase, value))
-                else:
-                    groups.setdefault(ctx, []).append((phrase, value))
+                group_order.setdefault(ctx, []).append((phrase, value))
 
         def _scroll_pass(e):
             self._ctx_canvas.yview_scroll(-1*(e.delta//120), "units")
 
-        for ctx_name, entries in groups.items():
+        for ctx_name, entries in group_order.items():
             if not entries:
                 continue
 
-            icon  = _CTX_ICONS.get(ctx_name, "🔧")
-            color = _CTX_COLOURS.get(ctx_name, AMBER)
-            label = ctx_name if ctx_name in _KNOWN_CONTEXTS else f"{ctx_name}  (custom)"
+            is_custom_group = ctx_name in groups
+            is_known        = ctx_name in _KNOWN_CONTEXTS
+            icon  = _CTX_ICONS.get(ctx_name, "👤" if is_custom_group else "🔧")
+            color = _CTX_COLOURS.get(ctx_name, "#cba6f7" if is_custom_group else AMBER)
+
+            if is_known:
+                label = ctx_name
+            elif is_custom_group:
+                members = ", ".join(groups[ctx_name][:3])
+                if len(groups[ctx_name]) > 3:
+                    members += "…"
+                label = f"{ctx_name}  (group: {members})"
+            else:
+                label = f"{ctx_name}  (app)"
 
             hdr = tk.Frame(self._ctx_inner, bg=CARD)
             hdr.pack(fill="x", pady=(8, 1))
@@ -401,13 +451,11 @@ class SettingsWidget(tk.Frame):
                 cb = tk.Checkbutton(row, variable=var, bg=BG,
                                     activebackground=BG, selectcolor=ENTRY_BG)
                 cb.pack(side="left")
-
                 tk.Label(row, text=phrase, bg=BG, fg=FG,
                          font=("Segoe UI", 9), width=24, anchor="w").pack(side="left")
 
-                preview   = _value_preview(value)
-                is_macro  = isinstance(value, dict)
-                prev_fg   = AMBER if is_macro else MUTED
+                preview  = _value_preview(value)
+                prev_fg  = AMBER if isinstance(value, dict) else MUTED
                 tk.Label(row, text=preview, bg=BG, fg=prev_fg,
                          font=("Consolas", 8), width=26, anchor="w").pack(side="left")
 
@@ -421,8 +469,6 @@ class SettingsWidget(tk.Frame):
                 for w in (row, cb):
                     w.bind("<MouseWheel>", _scroll_pass)
                 self._ctx_row_vars.append((var, phrase, ctx_name))
-
-    # ── Context CRUD ──────────────────────────────────────────────────────────
 
     def _add_context_cmd(self):
         self._show_cmd_editor()
@@ -469,44 +515,29 @@ class SettingsWidget(tk.Frame):
 
     def _show_cmd_editor(self, *, phrase="", context="browser",
                          value=None, old_phrase=None, old_context=None):
-        """
-        Full-screen overlay for adding or editing a context command.
-
-        Supports two action types:
-          shortcut — a keyboard shortcut string (ctrl+w, f5, windows+l …)
-          macro    — an ordered sequence of Press / Wait steps, repeated N times
-        """
-
-        # ── Overlay backdrop ──────────────────────────────────────────────────
         overlay = tk.Frame(self, bg="#0d0d1a")
         overlay.place(x=0, y=0, relwidth=1, relheight=1)
         overlay.lift()
         overlay.focus_set()
 
-        # ── Card ──────────────────────────────────────────────────────────────
         card = tk.Frame(overlay, bg=CARD)
         card.place(relx=0.5, rely=0.5, anchor="center",
                    relwidth=0.84, relheight=0.93)
 
-        # Title bar
         title_text = "✏  Edit Command" if old_phrase else "➕  Add Command"
         title_bar = tk.Frame(card, bg=ACC, pady=8)
         title_bar.pack(fill="x", side="top")
         tk.Label(title_bar, text=title_text, bg=ACC, fg="#fff",
                  font=("Segoe UI Semibold", 12)).pack()
 
-        # Key-capture hint bar (hidden by default)
         cap_bar     = tk.Frame(card, bg="#1a1a2e", pady=5)
         cap_bar_lbl = tk.Label(cap_bar, text="", bg="#1a1a2e", fg=AMBER,
                                font=("Segoe UI Semibold", 9))
         cap_bar_lbl.pack()
 
-        # Fixed footer (Save / Cancel) — packed before the scroll area so it
-        # stays at the bottom even when content is short.
         footer = tk.Frame(card, bg=CARD, padx=16, pady=10)
         footer.pack(fill="x", side="bottom")
 
-        # Scrollable body
         scroll_host = tk.Frame(card, bg=CARD)
         scroll_host.pack(fill="both", expand=True, side="top")
 
@@ -530,7 +561,6 @@ class SettingsWidget(tk.Frame):
         body.bind("<MouseWheel>", _scroll_body)
         body_canvas.bind("<MouseWheel>", _scroll_body)
 
-        # ── Detect initial mode ───────────────────────────────────────────────
         if isinstance(value, dict) and value.get("type") == "macro":
             init_mode     = "macro"
             init_shortcut = ""
@@ -542,15 +572,13 @@ class SettingsWidget(tk.Frame):
             init_steps    = []
             init_repeat   = 1
 
-        # ── Form variables ────────────────────────────────────────────────────
         phrase_var   = tk.StringVar(value=phrase)
         context_var  = tk.StringVar(value=context)
         mode_var     = tk.StringVar(value=init_mode)
         shortcut_var = tk.StringVar(value=init_shortcut)
         repeat_var   = tk.IntVar(value=init_repeat)
-        steps        = list(init_steps)   # mutable list shared with step callbacks
+        steps        = list(init_steps)
 
-        # ── Voice phrase ──────────────────────────────────────────────────────
         def field_row(label, widget_fn):
             f = tk.Frame(body, bg=CARD)
             f.pack(fill="x", pady=4)
@@ -563,27 +591,26 @@ class SettingsWidget(tk.Frame):
                                      bg=ENTRY_BG, fg=FG, insertbackground=FG,
                                      relief="flat", font=("Segoe UI", 10), bd=4))
 
-        field_row("Context",
-                  lambda f: ttk.Combobox(f, textvariable=context_var, state="normal",
-                                         values=list(_KNOWN_CONTEXTS),
-                                         font=("Segoe UI", 10)))
-
+        # Context dropdown — includes known, custom groups, added app procs
+        def _ctx_widget(f):
+            cb = ttk.Combobox(f, textvariable=context_var, state="normal",
+                              values=_all_context_values(), font=("Segoe UI", 10))
+            return cb
+        field_row("Context", _ctx_widget)
         tk.Label(body,
-                 text="  browser · explorer · editor · any — "
-                      "or type any .exe name (e.g. blender.exe)",
-                 bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w")
+                 text="  Built-in: browser · explorer · editor · any\n"
+                      "  Your groups appear here too — or type any .exe name (e.g. blender.exe)",
+                 bg=CARD, fg=MUTED, font=("Segoe UI", 8), justify="left").pack(anchor="w")
 
         tk.Frame(body, bg=MUTED, height=1).pack(fill="x", pady=(10, 8))
 
-        # ── Mode toggle ───────────────────────────────────────────────────────
+        sc_frame  = tk.Frame(body, bg=CARD)
+        mac_frame = tk.Frame(body, bg=CARD)
+
         mode_row = tk.Frame(body, bg=CARD)
         mode_row.pack(fill="x", pady=(0, 8))
         tk.Label(mode_row, text="Action:", bg=CARD, fg=FG,
                  font=("Segoe UI Semibold", 9)).pack(side="left", padx=(0, 12))
-
-        # Frames for each mode (defined before the radio command callback)
-        sc_frame  = tk.Frame(body, bg=CARD)
-        mac_frame = tk.Frame(body, bg=CARD)
 
         def _toggle_mode():
             if mode_var.get() == "shortcut":
@@ -637,16 +664,14 @@ class SettingsWidget(tk.Frame):
         steps_outer = tk.Frame(mac_frame, bg=ENTRY_BG)
         steps_outer.pack(fill="x", pady=(4, 0))
         steps_cv = tk.Canvas(steps_outer, bg=ENTRY_BG, highlightthickness=0, height=200)
-        steps_sb2 = ttk.Scrollbar(steps_outer, orient="vertical",
-                                  command=steps_cv.yview)
+        steps_sb2 = ttk.Scrollbar(steps_outer, orient="vertical", command=steps_cv.yview)
         steps_cv.configure(yscrollcommand=steps_sb2.set)
         steps_sb2.pack(side="right", fill="y")
         steps_cv.pack(side="left", fill="both", expand=True)
         steps_inner = tk.Frame(steps_cv, bg=ENTRY_BG)
         _swin = steps_cv.create_window((0, 0), window=steps_inner, anchor="nw")
         steps_inner.bind("<Configure>",
-                         lambda e: steps_cv.configure(
-                             scrollregion=steps_cv.bbox("all")))
+                         lambda e: steps_cv.configure(scrollregion=steps_cv.bbox("all")))
         steps_cv.bind("<Configure>",
                       lambda e: steps_cv.itemconfig(_swin, width=e.width))
         steps_cv.bind("<MouseWheel>", _scroll_body)
@@ -657,7 +682,7 @@ class SettingsWidget(tk.Frame):
                 w.destroy()
             if not steps:
                 tk.Label(steps_inner,
-                         text="  No steps yet — use the buttons below to build your macro.",
+                         text="  No steps yet — use the buttons below.",
                          bg=ENTRY_BG, fg=MUTED, font=("Segoe UI", 8),
                          pady=10).pack(anchor="w")
             for idx, step in enumerate(steps):
@@ -666,18 +691,17 @@ class SettingsWidget(tk.Frame):
             steps_cv.yview_moveto(1.0)
 
         def _make_step_row(idx, step):
-            alt = idx % 2 == 0
+            alt    = idx % 2 == 0
             row_bg = "#2e2e44" if alt else ENTRY_BG
+            e_bg   = CARD if alt else "#3a3a54"
 
             f = tk.Frame(steps_inner, bg=row_bg, pady=4, padx=6)
             f.pack(fill="x")
             f.bind("<MouseWheel>", _scroll_body)
 
-            # Number
             tk.Label(f, text=f"{idx+1:2d}.", bg=row_bg, fg=MUTED,
                      font=("Consolas", 9), width=3).pack(side="left")
 
-            # Type toggle button
             t_color = ACC if step["type"] == "press" else AMBER
             def _toggle_type(i=idx):
                 steps[i]["type"] = "wait" if steps[i]["type"] == "press" else "press"
@@ -690,22 +714,16 @@ class SettingsWidget(tk.Frame):
                       font=("Segoe UI Semibold", 8), padx=6, pady=2,
                       cursor="hand2", width=5).pack(side="left", padx=(2, 6))
 
-            e_bg = CARD if alt else "#3a3a54"
-
             if step["type"] == "press":
                 key_var = tk.StringVar(value=step.get("keys", ""))
-                def _kchange(*_, i=idx, v=key_var):
-                    steps[i]["keys"] = v.get()
+                def _kchange(*_, i=idx, v=key_var): steps[i]["keys"] = v.get()
                 key_var.trace_add("write", _kchange)
-
                 e = tk.Entry(f, textvariable=key_var, bg=e_bg, fg=FG,
                              insertbackground=FG, relief="flat",
                              font=("Consolas", 9), bd=2, width=18)
                 e.pack(side="left", padx=(0, 4))
                 e.bind("<MouseWheel>", _scroll_body)
-
-                def _cap_step(v=key_var):
-                    _start_capture(v, None)
+                def _cap_step(v=key_var): _start_capture(v, None)
                 tk.Button(f, text="🎹", command=_cap_step,
                           bg=MUTED, fg="#fff", activebackground=MUTED,
                           activeforeground="#fff", relief="flat",
@@ -714,12 +732,9 @@ class SettingsWidget(tk.Frame):
             else:
                 ms_var = tk.StringVar(value=str(step.get("ms", 200)))
                 def _mschange(*_, i=idx, v=ms_var):
-                    try:
-                        steps[i]["ms"] = max(1, int(v.get()))
-                    except ValueError:
-                        pass
+                    try: steps[i]["ms"] = max(1, int(v.get()))
+                    except ValueError: pass
                 ms_var.trace_add("write", _mschange)
-
                 e = tk.Entry(f, textvariable=ms_var, bg=e_bg, fg=FG,
                              insertbackground=FG, relief="flat",
                              font=("Consolas", 9), bd=2, width=7)
@@ -728,19 +743,11 @@ class SettingsWidget(tk.Frame):
                 tk.Label(f, text="ms", bg=row_bg, fg=MUTED,
                          font=("Segoe UI", 8)).pack(side="left", padx=(0, 8))
 
-            # Reorder / delete
             def _up(i=idx):
-                if i > 0:
-                    steps[i-1], steps[i] = steps[i], steps[i-1]
-                    _redraw_steps()
+                if i > 0: steps[i-1], steps[i] = steps[i], steps[i-1]; _redraw_steps()
             def _dn(i=idx):
-                if i < len(steps)-1:
-                    steps[i+1], steps[i] = steps[i], steps[i+1]
-                    _redraw_steps()
-            def _del(i=idx):
-                steps.pop(i)
-                _redraw_steps()
-
+                if i < len(steps)-1: steps[i+1], steps[i] = steps[i], steps[i+1]; _redraw_steps()
+            def _del(i=idx): steps.pop(i); _redraw_steps()
             for txt, cmd, col in [("↑", _up, MUTED), ("↓", _dn, MUTED), ("✕", _del, RED)]:
                 tk.Button(f, text=txt, command=cmd,
                           bg=col, fg="#fff", activebackground=col,
@@ -748,26 +755,16 @@ class SettingsWidget(tk.Frame):
                           font=("Segoe UI", 8), padx=5, pady=2,
                           cursor="hand2").pack(side="right", padx=1)
 
-        # Add / record row
-        add_row = tk.Frame(mac_frame, bg=CARD)
+        add_row   = tk.Frame(mac_frame, bg=CARD)
         add_row.pack(fill="x", pady=(8, 0))
+        rec_state = {"on": False}
+        rec_btn_r = [None]
 
-        rec_state   = {"on": False}
-        rec_btn_ref = [None]
-
-        def _add_press_step():
-            steps.append({"type": "press", "keys": ""})
-            _redraw_steps()
-
-        def _add_wait_step():
-            steps.append({"type": "wait", "ms": 200})
-            _redraw_steps()
-
+        def _add_press_step(): steps.append({"type": "press", "keys": ""}); _redraw_steps()
+        def _add_wait_step():  steps.append({"type": "wait",  "ms": 200}); _redraw_steps()
         def _toggle_record():
-            if rec_state["on"]:
-                _stop_record()
-            else:
-                _start_record()
+            if rec_state["on"]: _stop_record()
+            else:               _start_record()
 
         for txt, cmd in [("+ Press", _add_press_step), ("+ Wait", _add_wait_step)]:
             _btn(add_row, txt, cmd).pack(side="left", padx=(0, 6))
@@ -775,20 +772,16 @@ class SettingsWidget(tk.Frame):
         rec_b = tk.Button(add_row, text="🔴  Record", command=_toggle_record,
                           bg=MUTED, fg="#fff", activebackground=MUTED,
                           activeforeground="#fff", relief="flat",
-                          font=("Segoe UI Semibold", 9), padx=8, pady=5,
-                          cursor="hand2")
+                          font=("Segoe UI Semibold", 9), padx=8, pady=5, cursor="hand2")
         rec_b.pack(side="left")
-        rec_btn_ref[0] = rec_b
+        rec_btn_r[0] = rec_b
 
         tk.Label(mac_frame,
-                 text="Record: click here to focus, then press key combos — "
-                      "each combo becomes a Press step.",
-                 bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(
-            anchor="w", pady=(4, 0))
+                 text="Record: click here to focus, then press key combos — each combo = one step.",
+                 bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w", pady=(4, 0))
 
         _redraw_steps()
 
-        # Show correct mode initially
         if init_mode == "shortcut":
             sc_frame.pack(fill="x", pady=4)
         else:
@@ -796,52 +789,39 @@ class SettingsWidget(tk.Frame):
 
         # ── Key capture ───────────────────────────────────────────────────────
         _held    = set()
-        _cap_tgt = {"var": None, "btn": None}
+        _cap_tgt = {"var": None}
 
-        def _start_capture(target_var, target_btn):
+        def _start_capture(target_var, _btn_ref):
             _cap_tgt["var"] = target_var
-            _cap_tgt["btn"] = target_btn
             _held.clear()
             overlay.focus_set()
-            cap_bar_lbl.config(
-                text="🎹  Hold your key combination then release the last key…")
+            cap_bar_lbl.config(text="🎹  Hold your combo then release the last key…")
             cap_bar.pack(fill="x", after=title_bar)
 
         def _stop_capture_mode():
             _cap_tgt["var"] = None
-            btn = _cap_tgt.get("btn")
-            _cap_tgt["btn"] = None
             _held.clear()
             cap_bar.pack_forget()
-            if btn:
-                try:
-                    btn.config(text="🎹  Capture", bg=MUTED)
-                except tk.TclError:
-                    pass
 
-        # Wire shortcut capture button
-        sc_cap_btn.config(command=lambda: _start_capture(shortcut_var, sc_cap_btn))
+        sc_cap_btn.config(command=lambda: _start_capture(shortcut_var, None))
 
         def _start_record():
             rec_state["on"] = True
-            rec_btn_ref[0].config(text="⏹  Stop", bg=RED)
+            rec_btn_r[0].config(text="⏹  Stop", bg=RED)
             _held.clear()
             overlay.focus_set()
-            cap_bar_lbl.config(
-                text="🔴  Recording — press key combos. Click ⏹ Stop when finished.")
+            cap_bar_lbl.config(text="🔴  Recording — press combos. Click ⏹ Stop when done.")
             cap_bar.pack(fill="x", after=title_bar)
 
         def _stop_record():
             rec_state["on"] = False
-            rec_btn_ref[0].config(text="🔴  Record", bg=MUTED)
+            rec_btn_r[0].config(text="🔴  Record", bg=MUTED)
             _held.clear()
             cap_bar.pack_forget()
 
         def _on_kp(e):
             sym = _norm_key(e.keysym)
             _held.add(sym)
-
-            # Record mode: each non-modifier keydown → new Press step
             if rec_state["on"] and sym not in _MODS:
                 combo = _combo_str(_held)
                 _held.clear()
@@ -850,63 +830,47 @@ class SettingsWidget(tk.Frame):
 
         def _on_kr(e):
             sym = _norm_key(e.keysym)
-            # Single-capture mode: register combo on non-modifier key release
-            if (not rec_state["on"]
-                    and _cap_tgt["var"] is not None
-                    and sym not in _MODS
-                    and _held):
-                combo = _combo_str(_held)
-                _cap_tgt["var"].set(combo)
+            if (not rec_state["on"] and _cap_tgt["var"] is not None
+                    and sym not in _MODS and _held):
+                _cap_tgt["var"].set(_combo_str(_held))
                 _stop_capture_mode()
             _held.discard(sym)
 
         overlay.bind("<KeyPress>",   _on_kp, add="+")
         overlay.bind("<KeyRelease>", _on_kr, add="+")
 
-        # ── Footer buttons ────────────────────────────────────────────────────
+        # ── Footer ────────────────────────────────────────────────────────────
         def _cancel(_e=None):
-            _stop_record()
-            _stop_capture_mode()
-            overlay.destroy()
+            _stop_record(); _stop_capture_mode(); overlay.destroy()
 
         def _save(_e=None):
             phrase_txt  = phrase_var.get().strip().lower()
             context_txt = context_var.get().strip()
             if not phrase_txt or not context_txt:
                 messagebox.showwarning("Missing fields",
-                                       "Voice phrase and context are required.",
-                                       parent=overlay)
+                    "Voice phrase and context are required.", parent=overlay)
                 return
-
             if mode_var.get() == "shortcut":
                 sc = shortcut_var.get().strip().lower()
                 if not sc:
                     messagebox.showwarning("Missing shortcut",
-                                           "Enter a shortcut or switch to Macro mode.",
-                                           parent=overlay)
+                        "Enter a shortcut or switch to Macro mode.", parent=overlay)
                     return
                 new_value = sc
             else:
                 if not steps:
                     messagebox.showwarning("Empty macro",
-                                          "Add at least one Press step.",
-                                          parent=overlay)
+                        "Add at least one Press step.", parent=overlay)
                     return
-                new_value = {
-                    "type":   "macro",
-                    "repeat": max(1, repeat_var.get()),
-                    "steps":  [dict(s) for s in steps],
-                }
+                new_value = {"type": "macro", "repeat": max(1, repeat_var.get()),
+                             "steps": [dict(s) for s in steps]}
 
             cmds = user_config.get_context_commands()
-
-            # Remove old entry when editing
             if old_phrase and old_context:
                 if old_phrase in cmds and old_context in cmds[old_phrase]:
                     del cmds[old_phrase][old_context]
                     if not cmds[old_phrase]:
                         del cmds[old_phrase]
-
             cmds.setdefault(phrase_txt, {})[context_txt] = new_value
             user_config.set_context_commands(cmds)
             overlay.destroy()
@@ -915,9 +879,402 @@ class SettingsWidget(tk.Frame):
             self._flash(f'✓  {verb} "{phrase_txt}" [{context_txt}]')
 
         overlay.bind("<Escape>", _cancel)
-
         _btn(footer, "Save", _save).pack(side="right", padx=(8, 0))
         _btn(footer, "Cancel", _cancel, color=MUTED).pack(side="right")
+
+    # ── Groups tab ────────────────────────────────────────────────────────────
+
+    def _tab_groups(self, nb):
+        frame = tk.Frame(nb, bg=BG)
+        nb.add(frame, text="👥  Groups")
+
+        top = tk.Frame(frame, bg=BG)
+        top.pack(fill="x", padx=4, pady=(8, 4))
+        _lbl(top,
+             "Define named groups of apps that share context commands.\n"
+             'e.g. a "music" group with Spotify + YouTube Music → one set of commands for both.',
+             fg=MUTED, font=("Segoe UI", 8), justify="left").pack(side="left")
+
+        list_outer = tk.Frame(frame, bg=CARD)
+        list_outer.pack(fill="both", expand=True, padx=4, pady=(0, 4))
+
+        self._grp_canvas = tk.Canvas(list_outer, bg=BG, highlightthickness=0)
+        grp_sb = ttk.Scrollbar(list_outer, orient="vertical",
+                               command=self._grp_canvas.yview)
+        self._grp_canvas.configure(yscrollcommand=grp_sb.set)
+        grp_sb.pack(side="right", fill="y")
+        self._grp_canvas.pack(side="left", fill="both", expand=True)
+
+        self._grp_inner = tk.Frame(self._grp_canvas, bg=BG)
+        _gwin = self._grp_canvas.create_window(
+            (0, 0), window=self._grp_inner, anchor="nw")
+        self._grp_inner.bind(
+            "<Configure>",
+            lambda e: self._grp_canvas.configure(
+                scrollregion=self._grp_canvas.bbox("all")))
+        self._grp_canvas.bind(
+            "<Configure>",
+            lambda e: self._grp_canvas.itemconfig(_gwin, width=e.width))
+
+        def _scroll(e):
+            self._grp_canvas.yview_scroll(-1*(e.delta//120), "units")
+        self._grp_canvas.bind("<MouseWheel>", _scroll)
+        self._grp_inner.bind("<MouseWheel>", _scroll)
+
+        bot = tk.Frame(frame, bg=BG)
+        bot.pack(fill="x", padx=4, pady=(0, 4))
+        _btn(bot, "➕  New Group",
+             lambda: self._show_group_editor()).pack(side="left")
+
+    def _reload_groups_list(self):
+        for w in self._grp_inner.winfo_children():
+            w.destroy()
+
+        groups = user_config.get_custom_groups()
+        if not groups:
+            tk.Label(self._grp_inner,
+                     text="  No custom groups yet.  Click ➕ New Group to create one.",
+                     bg=BG, fg=MUTED, font=("Segoe UI", 9), pady=20).pack(anchor="w")
+            return
+
+        def _scroll_pass(e):
+            self._grp_canvas.yview_scroll(-1*(e.delta//120), "units")
+
+        for gname, procs in sorted(groups.items()):
+            card = tk.Frame(self._grp_inner, bg=CARD, padx=12, pady=10)
+            card.pack(fill="x", padx=4, pady=4)
+            card.bind("<MouseWheel>", _scroll_pass)
+
+            top_row = tk.Frame(card, bg=CARD)
+            top_row.pack(fill="x")
+            tk.Label(top_row, text=f"👥  {gname}", bg=CARD, fg=ACC,
+                     font=("Segoe UI Semibold", 11)).pack(side="left")
+
+            _btn(top_row, "✏ Edit",
+                 lambda n=gname, p=procs: self._show_group_editor(name=n, procs=p),
+                 color=ACC).pack(side="right", padx=(4, 0))
+            _btn(top_row, "🗑 Delete",
+                 lambda n=gname: self._del_group(n),
+                 color=RED).pack(side="right")
+
+            members = "  ·  ".join(procs) if procs else "  (no members)"
+            tk.Label(card, text=members, bg=CARD, fg=MUTED,
+                     font=("Consolas", 8), anchor="w",
+                     wraplength=500, justify="left").pack(anchor="w", pady=(4, 0))
+
+    def _del_group(self, name):
+        groups = user_config.get_custom_groups()
+        groups.pop(name, None)
+        user_config.set_custom_groups(groups)
+        self._reload_groups_list()
+        self._reload_context_list()
+        self._flash(f'✓  Deleted group "{name}".')
+
+    def _show_group_editor(self, *, name="", procs=None):
+        """Inline overlay to create or edit a custom app group."""
+        if procs is None:
+            procs = []
+        old_name = name if name else None
+
+        overlay = tk.Frame(self, bg="#0d0d1a")
+        overlay.place(x=0, y=0, relwidth=1, relheight=1)
+        overlay.lift()
+        overlay.focus_set()
+
+        card = tk.Frame(overlay, bg=CARD, padx=24, pady=20)
+        card.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.72)
+
+        title = "✏  Edit Group" if old_name else "➕  New Group"
+        tk.Label(card, text=title, bg=CARD, fg=ACC,
+                 font=("Segoe UI Semibold", 12)).pack(pady=(0, 14))
+
+        # Group name
+        tk.Label(card, text="Group name  (one word, used as the context in commands)",
+                 bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w")
+        name_var = tk.StringVar(value=name)
+        tk.Entry(card, textvariable=name_var, bg=ENTRY_BG, fg=FG,
+                 insertbackground=FG, relief="flat",
+                 font=("Segoe UI", 10), bd=4).pack(fill="x", pady=(2, 12))
+
+        # App member checkboxes
+        tk.Label(card, text="Member apps  (check each app to include in this group):",
+                 bg=CARD, fg=FG, font=("Segoe UI Semibold", 9)).pack(anchor="w")
+        tk.Label(card, text="  Commands targeting this group fire when any of these apps is focused.",
+                 bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w", pady=(0, 6))
+
+        members_frame = tk.Frame(card, bg=ENTRY_BG, padx=12, pady=8)
+        members_frame.pack(fill="x")
+
+        all_procs = user_config.get_proc_names()   # {name: proc}
+        member_vars: dict[str, tk.BooleanVar] = {}
+
+        if not all_procs:
+            tk.Label(members_frame, text="No apps added yet — add apps in the 📦 Apps tab first.",
+                     bg=ENTRY_BG, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w")
+        else:
+            for app_name in sorted(all_procs.keys()):
+                proc = all_procs[app_name]
+                var  = tk.BooleanVar(value=(proc in procs or app_name in procs))
+                member_vars[proc] = var
+                row = tk.Frame(members_frame, bg=ENTRY_BG)
+                row.pack(fill="x", pady=1)
+                tk.Checkbutton(row, variable=var, bg=ENTRY_BG,
+                               activebackground=ENTRY_BG,
+                               selectcolor=CARD).pack(side="left")
+                tk.Label(row, text=f"{app_name}",
+                         bg=ENTRY_BG, fg=FG, font=("Segoe UI", 9),
+                         width=18, anchor="w").pack(side="left")
+                tk.Label(row, text=proc, bg=ENTRY_BG, fg=MUTED,
+                         font=("Consolas", 8)).pack(side="left")
+
+        # Buttons
+        btn_row = tk.Frame(card, bg=CARD)
+        btn_row.pack(fill="x", pady=(14, 0))
+
+        def _cancel(_e=None): overlay.destroy()
+
+        def _save(_e=None):
+            gname = name_var.get().strip().lower().replace(" ", "_")
+            if not gname:
+                messagebox.showwarning("Name required",
+                    "Enter a group name.", parent=overlay)
+                return
+            selected_procs = [p for p, v in member_vars.items() if v.get()]
+            groups = user_config.get_custom_groups()
+            if old_name and old_name != gname:
+                groups.pop(old_name, None)
+            groups[gname] = selected_procs
+            user_config.set_custom_groups(groups)
+            overlay.destroy()
+            self._reload_groups_list()
+            self._reload_context_list()
+            verb = "Updated" if old_name else "Created"
+            self._flash(f'✓  {verb} group "{gname}" with {len(selected_procs)} app(s).')
+
+        overlay.bind("<Escape>", _cancel)
+        _btn(btn_row, "Save", _save).pack(side="right", padx=(8, 0))
+        _btn(btn_row, "Cancel", _cancel, color=MUTED).pack(side="right")
+
+    # ── Models tab ────────────────────────────────────────────────────────────
+
+    def _tab_models(self, nb):
+        frame = tk.Frame(nb, bg=BG)
+        nb.add(frame, text="📥  Models")
+
+        top = tk.Frame(frame, bg=BG)
+        top.pack(fill="x", padx=4, pady=(8, 4))
+        _lbl(top,
+             "Download and switch between Vosk speech-recognition models.\n"
+             "Larger models are more accurate but use more RAM and take longer to load.",
+             fg=MUTED, font=("Segoe UI", 8), justify="left").pack(anchor="w")
+
+        # Current model indicator
+        cur_card = tk.Frame(frame, bg=CARD, padx=14, pady=8)
+        cur_card.pack(fill="x", padx=4, pady=(0, 8))
+        tk.Label(cur_card, text="Active model:", bg=CARD, fg=MUTED,
+                 font=("Segoe UI", 8)).pack(anchor="w")
+        self._active_model_lbl = tk.Label(cur_card, text="",
+                                          bg=CARD, fg=GRN,
+                                          font=("Consolas", 9), anchor="w")
+        self._active_model_lbl.pack(anchor="w")
+
+        # Model cards — scrollable
+        canvas = tk.Canvas(frame, bg=BG, highlightthickness=0)
+        sb = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        inner = tk.Frame(canvas, bg=BG)
+        cwin = canvas.create_window((0, 0), window=inner, anchor="nw")
+        inner.bind("<Configure>",
+                   lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>",
+                    lambda e: canvas.itemconfig(cwin, width=e.width))
+
+        def _scroll(e): canvas.yview_scroll(-1*(e.delta//120), "units")
+        canvas.bind("<MouseWheel>", _scroll)
+        inner.bind("<MouseWheel>", _scroll)
+
+        self._model_cards = {}   # name → dict of widgets
+
+        for m in VOSK_MODELS:
+            self._build_model_card(inner, m, _scroll)
+
+        self._refresh_model_statuses()
+
+    def _build_model_card(self, parent, m: dict, scroll_fn):
+        name = m["name"]
+        card = tk.Frame(parent, bg=CARD, padx=14, pady=10)
+        card.pack(fill="x", padx=4, pady=4)
+        card.bind("<MouseWheel>", scroll_fn)
+
+        # Header row
+        hdr = tk.Frame(card, bg=CARD)
+        hdr.pack(fill="x")
+        tk.Label(hdr, text=name, bg=CARD, fg=FG,
+                 font=("Segoe UI Semibold", 10)).pack(side="left")
+        tk.Label(hdr, text=m["size"], bg=CARD, fg=MUTED,
+                 font=("Segoe UI", 8)).pack(side="left", padx=(10, 0))
+
+        tk.Label(card, text=m["desc"], bg=CARD, fg=MUTED,
+                 font=("Segoe UI", 8), anchor="w").pack(anchor="w", pady=(2, 6))
+
+        status_lbl = tk.Label(card, text="", bg=CARD, fg=MUTED,
+                               font=("Segoe UI", 8))
+        status_lbl.pack(anchor="w")
+
+        btn_row = tk.Frame(card, bg=CARD)
+        btn_row.pack(fill="x", pady=(4, 0))
+
+        progress_lbl = tk.Label(btn_row, text="", bg=CARD, fg=ACC,
+                                font=("Segoe UI", 8))
+        progress_lbl.pack(side="left")
+
+        use_btn = tk.Button(btn_row, text="✓ Use This Model",
+                            bg=GRN, fg="#11111b", activebackground=GRN,
+                            activeforeground="#11111b", relief="flat",
+                            font=("Segoe UI Semibold", 9), padx=8, pady=4,
+                            cursor="hand2",
+                            command=lambda n=name: self._select_model(n))
+        dl_btn = tk.Button(btn_row, text="⬇  Download",
+                           bg=ACC, fg="#fff", activebackground=ACC,
+                           activeforeground="#fff", relief="flat",
+                           font=("Segoe UI Semibold", 9), padx=8, pady=4,
+                           cursor="hand2",
+                           command=lambda info=m, pb=progress_lbl,
+                                          sb=status_lbl, db=None:
+                               self._download_model(info, progress_lbl, status_lbl))
+
+        self._model_cards[name] = {
+            "status": status_lbl,
+            "progress": progress_lbl,
+            "use_btn": use_btn,
+            "dl_btn": dl_btn,
+        }
+
+        use_btn.pack(side="right", padx=(4, 0))
+        dl_btn.pack(side="right")
+
+    def _refresh_model_statuses(self):
+        """Update each model card to show downloaded/active status."""
+        try:
+            import user_config as _uc
+            active = pathlib.Path(_uc.get_model_path()).name
+            self._active_model_lbl.config(text=active or "—")
+            exe_dir = pathlib.Path(_uc.get_model_path()).parent
+        except Exception:
+            exe_dir = pathlib.Path(".")
+            active  = ""
+
+        for m in VOSK_MODELS:
+            name     = m["name"]
+            present  = (exe_dir / name).is_dir()
+            is_active = name == active
+            wdg      = self._model_cards.get(name)
+            if not wdg:
+                continue
+            if is_active:
+                wdg["status"].config(text="✓ Active", fg=GRN)
+                wdg["use_btn"].config(state="disabled", bg=MUTED)
+                wdg["dl_btn"].config(state="disabled" if present else "normal")
+            elif present:
+                wdg["status"].config(text="Downloaded — not active", fg=MUTED)
+                wdg["use_btn"].config(state="normal", bg=GRN)
+                wdg["dl_btn"].config(state="disabled")
+            else:
+                wdg["status"].config(text="Not downloaded", fg=MUTED)
+                wdg["use_btn"].config(state="disabled", bg=MUTED)
+                wdg["dl_btn"].config(state="normal", bg=ACC)
+
+    def _select_model(self, name: str):
+        import user_config as _uc
+        exe_dir   = pathlib.Path(_uc.get_model_path()).parent
+        model_dir = exe_dir / name
+        if not model_dir.is_dir():
+            messagebox.showerror("Not downloaded",
+                                 f"{name} is not downloaded yet.",
+                                 parent=self.winfo_toplevel())
+            return
+        _uc.set_model_path(str(model_dir))
+        self._refresh_model_statuses()
+        self._flash(f"✓  Switched to {name} — restart engine to apply.")
+
+    def _download_model(self, m: dict, progress_lbl, status_lbl):
+        """Download and extract a Vosk model in a background thread."""
+        import zipfile, urllib.request, ssl, io
+
+        name    = m["name"]
+        url     = m["url"]
+        wdg     = self._model_cards.get(name, {})
+        dl_btn  = wdg.get("dl_btn")
+        use_btn = wdg.get("use_btn")
+
+        try:
+            import user_config as _uc
+            dest_dir = pathlib.Path(_uc.get_model_path()).parent
+        except Exception:
+            dest_dir = pathlib.Path(".")
+
+        if dl_btn:
+            dl_btn.config(state="disabled", text="Downloading…")
+        status_lbl.config(text="Starting download…", fg=AMBER)
+        progress_lbl.config(text="")
+
+        def _run():
+            try:
+                # Build SSL context
+                try:
+                    import certifi
+                    ctx = ssl.create_default_context(cafile=certifi.where())
+                except Exception:
+                    ctx = ssl.create_default_context()
+                    ctx.check_hostname = False
+                    ctx.verify_mode = ssl.CERT_NONE
+
+                req  = urllib.request.Request(
+                    url, headers={"User-Agent": "VoiceCommands/1.0"})
+                with urllib.request.urlopen(req, context=ctx, timeout=120) as resp:
+                    total      = int(resp.headers.get("Content-Length", 0))
+                    downloaded = 0
+                    buf        = io.BytesIO()
+                    chunk_size = 65536
+                    while True:
+                        chunk = resp.read(chunk_size)
+                        if not chunk:
+                            break
+                        buf.write(chunk)
+                        downloaded += len(chunk)
+                        if total:
+                            pct = downloaded / total * 100
+                            mb  = downloaded / 1_048_576
+                            self.after(0, lambda p=pct, d=mb: progress_lbl.config(
+                                text=f"{p:.0f}%  ({d:.0f} MB)"))
+
+                self.after(0, lambda: status_lbl.config(
+                    text="Extracting…", fg=AMBER))
+                self.after(0, lambda: progress_lbl.config(text=""))
+
+                buf.seek(0)
+                with zipfile.ZipFile(buf) as zf:
+                    zf.extractall(dest_dir)
+
+                self.after(0, self._refresh_model_statuses)
+                self.after(0, lambda: status_lbl.config(
+                    text="✓ Downloaded", fg=GRN))
+                self.after(0, lambda: self._flash(
+                    f"✓  {name} downloaded — click ✓ Use This Model to activate."))
+            except Exception as exc:
+                self.after(0, lambda e=str(exc): status_lbl.config(
+                    text=f"Error: {e}", fg=RED))
+                self.after(0, lambda: self._flash(
+                    f"Download failed: {exc}", RED))
+            finally:
+                if dl_btn:
+                    self.after(0, lambda: dl_btn.config(
+                        state="normal", text="⬇  Download"))
+
+        threading.Thread(target=_run, daemon=True).start()
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -946,7 +1303,7 @@ class SettingsWidget(tk.Frame):
                            int(user_config.get_confidence_threshold() * 100))
             self._on_conf_change()
             self._set_spin(self._cooldown_spin, user_config.get_cooldown())
-            self._set_spin(self._delay_spin,    user_config.get_close_delay())
+            self._set_spin(self._delay_spin, user_config.get_close_delay())
             v_steps = user_config.get_volume_steps()
             for word, sp in self._vol_spins.items():
                 self._set_spin(sp, v_steps.get(
@@ -959,6 +1316,8 @@ class SettingsWidget(tk.Frame):
                 entry.insert(0, val)
                 entry.xview_moveto(0)
             self._reload_context_list()
+            self._reload_groups_list()
+            self._refresh_model_statuses()
         except Exception as exc:
             import traceback
             self._flash(f"⚠ Settings load error: {exc}", RED)
@@ -975,6 +1334,6 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.title("Settings")
     root.configure(bg=BG)
-    root.geometry("820x700")
+    root.geometry("900x740")
     SettingsWidget(root).pack(fill="both", expand=True)
     root.mainloop()
