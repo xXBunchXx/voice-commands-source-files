@@ -837,6 +837,7 @@ class AppManagerWidget(tk.Frame):
             return
         user_config.delete_entry(name)
         user_config.set_spoken_name(name, "")   # remove spoken name if any
+        user_config.set_app_slot("", name)       # remove number slot if any
         self._reload()
         self._flash(f'✓  Deleted "{name}".', color=RED)
 
