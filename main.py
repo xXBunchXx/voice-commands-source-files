@@ -268,7 +268,7 @@ _tray_icon: pystray.Icon | None = None
 def _make_tray_image() -> Image.Image:
     icon = _load_icon()
     if icon is not None:
-        icon = icon.resize((64, 64), Image.LANCZOS)
+        icon = icon.resize((85, 85), Image.LANCZOS)
         return icon
     # Fallback: simple drawn icon
     size = 64
