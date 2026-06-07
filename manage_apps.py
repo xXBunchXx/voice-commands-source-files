@@ -202,7 +202,7 @@ class AppManagerWidget(tk.Frame):
 
     def _section(self, parent, title):
         f = tk.Frame(parent, bg=BG)
-        tk.Label(f, text=title, bg=BG, fg=ACC,
+        tk.Label(f, text=title, bg=BG, fg=ACCENT_TEXT,
                  font=("Segoe UI Semibold", 10)).pack(anchor="w")
         tk.Frame(f, bg=ACC, height=1).pack(fill="x", pady=(2, 6))
         return f
@@ -322,7 +322,7 @@ class AppManagerWidget(tk.Frame):
         hdr = tk.Frame(page, bg=BG)
         hdr.pack(fill="x", padx=12, pady=(8, 0))
         self._btn(hdr, "←  Back", self._go_main, MUTED).pack(side="left")
-        tk.Label(hdr, text="🔍  Scan Installed Apps", bg=BG, fg=ACC,
+        tk.Label(hdr, text="🔍  Scan Installed Apps", bg=BG, fg=ACCENT_TEXT,
                  font=("Segoe UI Semibold", 12)).pack(side="left", padx=(12, 0))
 
         self._scan_status = tk.Label(page, text="", bg=BG, fg=MUTED,
@@ -414,7 +414,7 @@ class AppManagerWidget(tk.Frame):
         card = tk.Frame(overlay, bg=CARD, padx=24, pady=20)
         card.place(relx=0.5, rely=0.4, anchor="center")
 
-        tk.Label(card, text=f"{icon}  {title}", bg=CARD, fg=ACC,
+        tk.Label(card, text=f"{icon}  {title}", bg=CARD, fg=ACCENT_TEXT,
                  font=("Segoe UI Semibold", 11)).pack(pady=(0, 12))
 
         entries = []
