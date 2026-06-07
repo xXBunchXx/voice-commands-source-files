@@ -1215,6 +1215,29 @@ def run(stop_event: _threading.Event | None = None) -> bool:
     print(f"Confidence threshold: {CONFIDENCE_THRESHOLD:.0%}")
     print("Say 'diagnose' at any time to recheck running apps.\n")
 
+    # ── Context grammar watcher ───────────────────────────────────────────
+    # Rebuilds the Vosk grammar whenever the foreground app changes so that
+    # only context commands relevant to the active app are in the vocabulary.
+    # Compares the full grammar string — if it hasn't changed (e.g. switching
+    # between two browser windows) the recognizer is left alone.
+    _current_grammar = [grammar]   # mutable cell shared with the thread
+
+    def _grammar_watcher():
+        while not stop_event.is_set():
+            proc        = _get_active_proc()
+            new_grammar = build_grammar(proc)
+            if new_grammar != _current_grammar[0]:
+                _current_grammar[0] = new_grammar
+                rec.SetGrammar(new_grammar)
+                rec.Reset()
+                if rec_ref is not None:
+                    rec_ref.SetGrammar(new_grammar)
+                    rec_ref.Reset()
+                print(f"  ↻  Grammar updated for '{proc or 'unknown'}'")
+            stop_event.wait(0.8)   # check ~every 800 ms
+
+    _threading.Thread(target=_grammar_watcher, daemon=True).start()
+
     try:
         while not stop_event.is_set():
             data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
