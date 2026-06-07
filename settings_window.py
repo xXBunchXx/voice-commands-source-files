@@ -996,14 +996,34 @@ class SettingsWidget(tk.Frame):
                  insertbackground=FG, relief="flat",
                  font=("Segoe UI", 10), bd=4).pack(fill="x", pady=(2, 12))
 
-        # App member checkboxes
+        # App member checkboxes — scrollable so large app lists don't overflow
         tk.Label(card, text="Member apps  (check each app to include in this group):",
                  bg=CARD, fg=FG, font=("Segoe UI Semibold", 9)).pack(anchor="w")
         tk.Label(card, text="  Commands targeting this group fire when any of these apps is focused.",
                  bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w", pady=(0, 6))
 
-        members_frame = tk.Frame(card, bg=ENTRY_BG, padx=12, pady=8)
-        members_frame.pack(fill="x")
+        members_outer = tk.Frame(card, bg=ENTRY_BG)
+        members_outer.pack(fill="x")
+
+        members_cv  = tk.Canvas(members_outer, bg=ENTRY_BG, highlightthickness=0, height=220)
+        members_sb  = ttk.Scrollbar(members_outer, orient="vertical",
+                                    command=members_cv.yview)
+        members_cv.configure(yscrollcommand=members_sb.set)
+        members_sb.pack(side="right", fill="y")
+        members_cv.pack(side="left", fill="both", expand=True)
+
+        members_frame = tk.Frame(members_cv, bg=ENTRY_BG, padx=12, pady=8)
+        _mwin = members_cv.create_window((0, 0), window=members_frame, anchor="nw")
+        members_frame.bind("<Configure>",
+                           lambda e: members_cv.configure(
+                               scrollregion=members_cv.bbox("all")))
+        members_cv.bind("<Configure>",
+                        lambda e: members_cv.itemconfig(_mwin, width=e.width))
+
+        def _mscroll(e):
+            members_cv.yview_scroll(-1*(e.delta//120), "units")
+        members_cv.bind("<MouseWheel>", _mscroll)
+        members_frame.bind("<MouseWheel>", _mscroll)
 
         all_procs = user_config.get_proc_names()   # {name: proc}
         member_vars: dict[str, tk.BooleanVar] = {}
@@ -1018,6 +1038,7 @@ class SettingsWidget(tk.Frame):
                 member_vars[proc] = var
                 row = tk.Frame(members_frame, bg=ENTRY_BG)
                 row.pack(fill="x", pady=1)
+                row.bind("<MouseWheel>", _mscroll)
                 tk.Checkbutton(row, variable=var, bg=ENTRY_BG,
                                activebackground=ENTRY_BG,
                                selectcolor=CARD).pack(side="left")
