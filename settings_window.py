@@ -1329,7 +1329,7 @@ class SettingsWidget(tk.Frame):
                 with zipfile.ZipFile(buf) as zf:
                     zf.extractall(dest_dir)
 
-                self.after(0, self._refresh_model_statuses)
+                self.after(0, on_done if on_done else self._refresh_model_statuses)
                 self.after(0, lambda: status_lbl.config(
                     text="✓ Downloaded", fg=GRN))
                 self.after(0, lambda: self._flash(
