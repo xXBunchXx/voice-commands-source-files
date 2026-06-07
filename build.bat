@@ -5,10 +5,18 @@ echo Closing any running VoiceCommands instances...
 taskkill /F /IM VoiceCommands.exe >nul 2>&1
 timeout /t 3 /nobreak >nul
 
-pip install pyinstaller certifi pystray pillow >nul 2>&1
+:: ── Install / upgrade dependencies ────────────────────────────────────────────
+echo.
+echo Installing dependencies...
+pip install --upgrade pyinstaller certifi pystray pillow vosk
+if errorlevel 1 (
+    echo.
+    echo ERROR: pip install failed. Check the output above.
+    pause
+    exit /b 1
+)
 
 :: ── Choose version bump type ──────────────────────────────────────────────────
-:: Read current version and calculate all three options to show in the prompt
 for /f "tokens=*" %%v in (version.txt) do set CUR_VER=%%v
 for /f "tokens=*" %%v in ('powershell -NoProfile -Command "$p=(Get-Content version.txt).Trim()-split[char]46;$p[2]=[int]$p[2]+1;$p-join[char]46"') do set VER_PATCH=%%v
 for /f "tokens=*" %%v in ('powershell -NoProfile -Command "$p=(Get-Content version.txt).Trim()-split[char]46;$p[1]=[int]$p[1]+1;$p[2]=0;$p-join[char]46"') do set VER_MINOR=%%v
@@ -35,6 +43,9 @@ if "%UPDATE_TYPE%"=="1" (
     powershell -NoProfile -Command "$v=(Get-Content version.txt).Trim();$p=$v-split'\.';$p[2]=[int]$p[2]+1;$n=$p-join'.';Set-Content version.txt $n;Write-Host('Patch: '+$v+' -> '+$n)"
 )
 
+:: ── Build ─────────────────────────────────────────────────────────────────────
+echo.
+echo Running PyInstaller...
 pyinstaller ^
   --onefile ^
   --noconsole ^
@@ -43,10 +54,13 @@ pyinstaller ^
   --collect-all vosk ^
   --collect-all pystray ^
   --hidden-import PIL ^
+  --exclude-module _bootlocale ^
+  --exclude-module _distutils_hack ^
   main.py
 
 if errorlevel 1 (
-    echo Build failed!
+    echo.
+    echo Build failed! Check the output above for details.
     pause
     exit /b 1
 )
