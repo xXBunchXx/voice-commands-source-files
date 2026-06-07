@@ -1170,9 +1170,9 @@ def run(stop_event: _threading.Event | None = None) -> bool:
 
     # ── Load main model ───────────────────────────────────────────────────
     print("Loading model...")
-    model = Model(MODEL_PATH)
-    grammar = build_grammar()
-    rec   = KaldiRecognizer(model, SAMPLE_RATE)
+    model   = Model(MODEL_PATH)
+    grammar = build_grammar(_get_active_proc())
+    rec     = KaldiRecognizer(model, SAMPLE_RATE)
     rec.SetGrammar(grammar)
     rec.SetWords(True)
 
