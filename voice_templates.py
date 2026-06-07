@@ -101,11 +101,17 @@ def template_count(spoken_name: str) -> int:
 
 
 def match(audio_bytes: bytes,
-          threshold: float = DEFAULT_THRESHOLD) -> tuple[str, float] | None:
+          threshold: float | None = None) -> tuple[str, float] | None:
     """Compare *audio_bytes* against all stored templates.
 
-    Returns (spoken_name, distance) for the best match at or below *threshold*,
-    or None if nothing is close enough.
+    The threshold is adaptive: for each spoken name we compute the average
+    pairwise DTW distance between its own training samples (their natural
+    spread), then multiply by THRESHOLD_FACTOR to set the acceptance cutoff.
+    This means the threshold self-calibrates to how consistent the user's
+    voice samples were — tight samples → tight threshold, variable samples
+    → looser threshold.
+
+    Returns (spoken_name, distance) for the best match, or None.
     """
     if not _loaded:
         reload()
@@ -117,17 +123,36 @@ def match(audio_bytes: bytes,
 
     best_name: str | None = None
     best_dist = float("inf")
+    best_thresh = DEFAULT_THRESHOLD
 
     for name, tmpl_list in _templates.items():
-        for tmpl in tmpl_list:
-            if tmpl is None:
-                continue
+        valid = [t for t in tmpl_list if t is not None]
+        if not valid:
+            continue
+
+        # Adaptive threshold: mean pairwise distance between training samples
+        # × THRESHOLD_FACTOR.  Fall back to DEFAULT_THRESHOLD if only 1 sample.
+        if len(valid) >= 2:
+            pairs = []
+            for i in range(len(valid)):
+                for j in range(i + 1, len(valid)):
+                    pairs.append(_dtw_distance(valid[i], valid[j]))
+            spread  = sum(pairs) / len(pairs)
+            cutoff  = spread * THRESHOLD_FACTOR
+        else:
+            cutoff = DEFAULT_THRESHOLD
+
+        for tmpl in valid:
             dist = _dtw_distance(query, tmpl)
             if dist < best_dist:
-                best_dist = dist
-                best_name = name
+                best_dist  = dist
+                best_name  = name
+                best_thresh = cutoff
 
-    if best_name is not None and best_dist <= threshold:
+    if threshold is not None:
+        best_thresh = threshold   # caller override
+
+    if best_name is not None and best_dist <= best_thresh:
         return best_name, best_dist
     return None
 
