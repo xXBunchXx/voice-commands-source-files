@@ -378,6 +378,7 @@ def _schema_defaults() -> dict:
         "SCAN_FOLDERS":         [],
         "CUSTOM_GROUPS":        {},   # {group_name: [proc_name, ...]}
         "SPOKEN_NAMES":         {},   # {display_name: spoken_name}
+        "DUAL_MODEL_CHECK":     True, # run small model alongside main to strip noise words
         "OVERLAY_ENABLED":      True,
         "OVERLAY_POSITION":     "near cursor",
     }
