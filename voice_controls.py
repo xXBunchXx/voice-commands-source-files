@@ -110,6 +110,28 @@ def _proc_matches_context(proc: str, context: str) -> bool:
     return bool(proc) and proc.lower() == context.lower()
 
 
+_WM_APPCOMMAND              = 0x0319
+_APPCOMMAND_MEDIA_PLAY_PAUSE = 14
+
+
+def _play_in_app(app_name: str) -> bool:
+    """Send APPCOMMAND_MEDIA_PLAY_PAUSE directly to the app's window via WM_APPCOMMAND.
+    Returns True if the message was delivered to a window."""
+    try:
+        hwnds = _windows_for_app(app_name)
+        if not hwnds:
+            return False
+        hwnd = _pick_window(hwnds, app_name)
+        win32gui.PostMessage(
+            hwnd, _WM_APPCOMMAND, hwnd,
+            _APPCOMMAND_MEDIA_PLAY_PAUSE << 16)
+        print(f"  ↳ APPCOMMAND_MEDIA_PLAY_PAUSE → {app_name} (hwnd {hwnd:#x})")
+        return True
+    except Exception as _pe:
+        print(f"  WM_APPCOMMAND failed: {_pe}")
+        return False
+
+
 def _execute_action(action) -> None:
     """Execute a shortcut string or a macro dict."""
     import time as _t
