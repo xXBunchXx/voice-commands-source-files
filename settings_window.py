@@ -19,8 +19,8 @@ AMBER    = "#fbbf24"
 
 _KNOWN_CONTEXTS = ("browser", "explorer", "editor", "any")
 _CTX_ICONS      = {"browser": "🌐", "explorer": "📁", "editor": "✏️", "any": "🌍"}
-_CTX_COLOURS    = {"browser": "#60a5fa", "explorer": "#4ade80",
-                   "editor": "#fbbf24",  "any":     "#93c5fd"}
+_CTX_COLOURS    = {"browser": "#2d6ab3", "explorer": "#4ade80",
+                   "editor": "#fbbf24",  "any":     "#2d6ab3"}
 
 _MOD_MAP = {
     "control_l": "ctrl",  "control_r": "ctrl",
