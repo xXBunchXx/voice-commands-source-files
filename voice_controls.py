@@ -1070,14 +1070,6 @@ def run(stop_event: _threading.Event | None = None) -> bool:
                 text   = result.get("text", "").strip().lower()
                 if not text:
                     continue
-
-                # Hard grammar filter — large Vosk models treat SetGrammar()
-                # as a soft hint and still return out-of-vocabulary words.
-                # We enforce it ourselves: discard anything not in our phrase list.
-                if _grammar_phrases and text not in _grammar_phrases:
-                    print(f"🚫  Out-of-grammar: '{text}' — ignored")
-                    continue
-
                 conf = average_confidence(result)
                 if conf >= CONFIDENCE_THRESHOLD:
                     handle_command(text)
