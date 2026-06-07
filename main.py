@@ -583,7 +583,7 @@ def main():
     )
     log_box.pack(fill="both", expand=True, pady=(4, 0))
     log_box.tag_config("hear",  foreground="#89b4fa")
-    log_box.tag_config("cmd",   foreground="#a6e3a1")
+    log_box.tag_config("cmd",   foreground="#4ade80")
     log_box.tag_config("low",   foreground="#f9e2af")
     log_box.tag_config("info",  foreground="#ffffff")
     log_box.tag_config("error", foreground="#f38ba8")
