@@ -1068,6 +1068,7 @@ def handle_command(text: str) -> bool:
             print(f"  Say '{_cw('close')}' followed by an app name")
     elif _try_context_command(text):
         pass   # handled inside _try_context_command
+    return False
 
 
 # ── ENGINE ───────────────────────────────────────────────────────────────
