@@ -272,6 +272,14 @@ def set_overlay_position(pos: str) -> None:
     data["OVERLAY_POSITION"] = pos
     save(data)
 
+def get_scan_folders() -> list[str]:
+    return load().get("SCAN_FOLDERS", [])
+
+def set_scan_folders(folders: list[str]) -> None:
+    data = load()
+    data["SCAN_FOLDERS"] = folders
+    save(data)
+
 def get_context_commands() -> dict[str, dict[str, str]]:
     stored = load().get("CONTEXT_COMMANDS", {})
     merged = {**DEFAULT_CONTEXT_COMMANDS}
