@@ -367,6 +367,7 @@ def _schema_defaults() -> dict:
         "CONTEXT_COMMANDS":     {},   # empty = use all defaults
         "SCAN_FOLDERS":         [],
         "CUSTOM_GROUPS":        {},   # {group_name: [proc_name, ...]}
+        "SPOKEN_NAMES":         {},   # {display_name: spoken_name}
         "OVERLAY_ENABLED":      True,
         "OVERLAY_POSITION":     "near cursor",
     }
