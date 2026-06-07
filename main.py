@@ -425,7 +425,7 @@ def main():
     BG     = "#0a1020"
     CARD   = "#0f1a2e"
     ACC    = "#1a56db"
-    FG     = "#d4e0f0"
+    FG     = "#ffffff"
     GRN    = "#4ade80"
     RED    = "#f87171"
     MUTED  = "#3d5470"
