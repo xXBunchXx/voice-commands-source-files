@@ -737,11 +737,12 @@ def undo_close() -> None:
     hwnds    = _pending_close["hwnds"]
     _pending_cancel.set()
     _pending_close = None
-    # Restore minimised windows
+    # Restore force-minimised windows
     for hwnd in hwnds:
         try:
-            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-            _set_foreground(hwnd)
+            if win32gui.IsWindow(hwnd):
+                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                _set_foreground(hwnd)
         except Exception:
             pass
     print(f"↩  Cancelled close — {app_name} restored!")
