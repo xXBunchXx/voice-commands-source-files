@@ -7,15 +7,16 @@ from tkinter import ttk, messagebox, filedialog
 import pathlib
 import user_config
 
-BG       = "#0a1020"
-CARD     = "#0f1a2e"
-ACC      = "#0e307b"
-FG       = "#ffffff"
-ENTRY_BG = "#162033"
-MUTED    = "#3d5470"
-GRN      = "#4ade80"
-RED      = "#f87171"
-AMBER    = "#fbbf24"
+BG          = "#0a1020"
+CARD        = "#0f1a2e"
+ACC         = "#1a56db"   # button / header backgrounds
+ACCENT_TEXT = "#4a8fe8"   # blue used as label / title text (readable on dark bg)
+FG          = "#ffffff"
+ENTRY_BG    = "#162033"
+MUTED       = "#3d5470"
+GRN         = "#4ade80"
+RED         = "#f87171"
+AMBER       = "#fbbf24"
 
 _KNOWN_CONTEXTS = ("browser", "explorer", "editor", "any")
 _CTX_ICONS      = {"browser": "🌐", "explorer": "📁", "editor": "✏️", "any": "🌍"}
