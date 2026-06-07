@@ -1,6 +1,20 @@
 """
 Manages per-user config stored in %APPDATA%/VoiceCommands/config.json.
-This file is NEVER overwritten by updates — each user keeps their own entries.
+
+Version scheme  A.B.C.D  (all integers, read left to right):
+  A — every new build; likely to be buggy.  Reset to 0 when B increments.
+  B — tested and confirmed stable.          Reset to 0 when C increments.
+  C — fairly important / significant update. Reset to 0 when D increments.
+  D — huge overhaul / milestone release.
+
+Incrementing a number always resets every number to its left back to 0.
+Example progression: 0.0.0.1 → 1.0.0.1 → 2.0.0.1 → 0.1.0.1 → 1.1.0.1 → 0.0.1.1 …
+
+Save-file compatibility:
+  Configs whose stored VERSION is older than RESET_BASELINE are wiped to
+  defaults once, then the user's config is built fresh.  After that first
+  reset, configs are migrated forward key-by-key and are never wiped again
+  unless a future RESET_BASELINE bump is deliberately added.
 """
 import json
 import os
