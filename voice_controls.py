@@ -195,9 +195,23 @@ PREFERRED_TITLE: dict[str, str] = {
     "discord": "discord",
 }
 
+def _terminate_proc(proc_name: str) -> None:
+    """Terminate every running process whose exe name matches *proc_name*
+    (case-insensitive).  Used for apps that ignore WM_CLOSE (e.g. Discord)."""
+    for p in psutil.process_iter(["name"]):
+        try:
+            if p.info["name"].lower() == proc_name.lower():
+                p.terminate()
+        except Exception:
+            pass
+
+
 # "open X" runs this instead of window detection.
+# Discord: discord:// URI uses Discord's own restore/launch path — works whether
+# Discord is closed, hidden in tray, or already visible.
 OPEN_OVERRIDE = {
-    "steam": lambda: os.startfile("steam://open/main"),
+    "steam":   lambda: os.startfile("steam://open/main"),
+    "discord": lambda: os.startfile("discord://"),
 }
 
 # Special launch for new instances.
@@ -209,8 +223,10 @@ LAUNCH_OVERRIDE = {
 }
 
 # Custom close commands.
+# Discord: WM_CLOSE only hides to tray, so we terminate the process instead.
 CLOSE_OVERRIDE = {
-    "steam": lambda: subprocess.Popen([APPS["steam"], "-shutdown"]),
+    "steam":   lambda: subprocess.Popen([APPS["steam"], "-shutdown"]),
+    "discord": lambda: _terminate_proc("discord.exe"),
 }
 
 # Apps where minimise works by focusing the window via OPEN_OVERRIDE and then
