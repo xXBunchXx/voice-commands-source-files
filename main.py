@@ -374,10 +374,10 @@ class StatusOverlay:
         self._win.withdraw()
         outer = tk.Frame(self._win, bg="#1a56db", padx=2, pady=2)
         outer.pack()
-        inner = tk.Frame(outer, bg="#1e1e2e", padx=20, pady=10)
+        inner = tk.Frame(outer, bg="#0a1020", padx=20, pady=10)
         inner.pack()
         self._label = tk.Label(
-            inner, text="", bg="#1e1e2e", fg="#cdd6f4",
+            inner, text="", bg="#0a1020", fg="#cdd6f4",
             font=("Segoe UI Semibold", 12),
         )
         self._label.pack()
