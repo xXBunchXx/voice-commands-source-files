@@ -34,7 +34,9 @@ _N_FFT     = 512
 _MAX_FRAMES = 120   # cap for DTW speed (~1.2 s of speech)
 
 # How close a DTW match has to be to count (lower = stricter)
-DEFAULT_THRESHOLD = 2.8
+DEFAULT_THRESHOLD  = 2.8
+# Adaptive threshold: accept if query distance ≤ mean-pairwise-spread × factor
+THRESHOLD_FACTOR   = 1.8
 
 # ── In-memory cache ────────────────────────────────────────────────────────────
 _templates: dict[str, list[np.ndarray]] = {}   # spoken_name → [mfcc, ...]
