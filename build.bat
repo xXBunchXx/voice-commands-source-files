@@ -31,10 +31,10 @@ if errorlevel 1 (
 
 for /f "tokens=*" %%v in (version.txt) do set CUR_VER=%%v
 
-for /f "tokens=*" %%v in ('python -c "p=open('version.txt').read().strip().split('.');p[0]=str(int(p[0])+1);print('.'.join(p))"') do set VER_A=%%v
-for /f "tokens=*" %%v in ('python -c "p=open('version.txt').read().strip().split('.');p[1]=str(int(p[1])+1);p[0]='0';print('.'.join(p))"') do set VER_B=%%v
-for /f "tokens=*" %%v in ('python -c "p=open('version.txt').read().strip().split('.');p[2]=str(int(p[2])+1);p[1]='0';p[0]='0';print('.'.join(p))"') do set VER_C=%%v
-for /f "tokens=*" %%v in ('python -c "p=open('version.txt').read().strip().split('.');p[3]=str(int(p[3])+1);p[2]='0';p[1]='0';p[0]='0';print('.'.join(p))"') do set VER_D=%%v
+for /f "tokens=*" %%v in ('python -c "p=open('version.txt').read().strip().split('.');p[0]=str(int(p[0])+1);p[1]='0';p[2]='0';p[3]='0';print('.'.join(p))"') do set VER_A=%%v
+for /f "tokens=*" %%v in ('python -c "p=open('version.txt').read().strip().split('.');p[1]=str(int(p[1])+1);p[2]='0';p[3]='0';print('.'.join(p))"') do set VER_B=%%v
+for /f "tokens=*" %%v in ('python -c "p=open('version.txt').read().strip().split('.');p[2]=str(int(p[2])+1);p[3]='0';print('.'.join(p))"') do set VER_C=%%v
+for /f "tokens=*" %%v in ('python -c "p=open('version.txt').read().strip().split('.');p[3]=str(int(p[3])+1);print('.'.join(p))"') do set VER_D=%%v
 
 echo.
 echo Current version: %CUR_VER%
@@ -76,26 +76,26 @@ goto build
 
 :do_a
 set BUILD_TYPE=Overhaul
-python -c "p=open('version.txt').read().strip().split('.');p[0]=str(int(p[0])+1);v='.'.join(p);open('version.txt','w',encoding='utf-8').write(v);print('Overhaul: %CUR_VER% ->',v)"
+python -c "p=open('version.txt').read().strip().split('.');p[0]=str(int(p[0])+1);p[1]='0';p[2]='0';p[3]='0';v='.'.join(p);open('version.txt','w',encoding='utf-8').write(v);print('Overhaul: %CUR_VER% ->',v)"
 call :patch_py
 goto build
 
 :do_b
 set BUILD_TYPE=Important
-python -c "p=open('version.txt').read().strip().split('.');p[1]=str(int(p[1])+1);p[0]='0';v='.'.join(p);open('version.txt','w',encoding='utf-8').write(v);print('Important: %CUR_VER% ->',v)"
+python -c "p=open('version.txt').read().strip().split('.');p[1]=str(int(p[1])+1);p[2]='0';p[3]='0';v='.'.join(p);open('version.txt','w',encoding='utf-8').write(v);print('Important: %CUR_VER% ->',v)"
 call :patch_py
 goto build
 
 :do_c
 set BUILD_TYPE=Stable
-python -c "p=open('version.txt').read().strip().split('.');p[2]=str(int(p[2])+1);p[1]='0';p[0]='0';v='.'.join(p);open('version.txt','w',encoding='utf-8').write(v);print('Stable: %CUR_VER% ->',v)"
+python -c "p=open('version.txt').read().strip().split('.');p[2]=str(int(p[2])+1);p[3]='0';v='.'.join(p);open('version.txt','w',encoding='utf-8').write(v);print('Stable: %CUR_VER% ->',v)"
 call :patch_py
 goto build
 
 :do_d
 set SKIP_RELEASE=1
 set BUILD_TYPE=Build
-python -c "p=open('version.txt').read().strip().split('.');p[3]=str(int(p[3])+1);p[2]='0';p[1]='0';p[0]='0';v='.'.join(p);open('version.txt','w',encoding='utf-8').write(v);print('Build: %CUR_VER% ->',v)"
+python -c "p=open('version.txt').read().strip().split('.');p[3]=str(int(p[3])+1);v='.'.join(p);open('version.txt','w',encoding='utf-8').write(v);print('Build: %CUR_VER% ->',v)"
 call :patch_py
 goto build
 
