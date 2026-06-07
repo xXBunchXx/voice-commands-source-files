@@ -1137,13 +1137,19 @@ class SettingsWidget(tk.Frame):
         # Header row
         hdr = tk.Frame(card, bg=CARD)
         hdr.pack(fill="x")
-        tk.Label(hdr, text=name, bg=CARD, fg=FG,
+        name_fg = FG if m.get("recommended", True) else MUTED
+        tk.Label(hdr, text=name, bg=CARD, fg=name_fg,
                  font=("Segoe UI Semibold", 10)).pack(side="left")
         tk.Label(hdr, text=m["size"], bg=CARD, fg=MUTED,
                  font=("Segoe UI", 8)).pack(side="left", padx=(10, 0))
+        if not m.get("recommended", True):
+            tk.Label(hdr, text="⚠ not grammar-safe", bg=CARD, fg=AMBER,
+                     font=("Segoe UI", 8)).pack(side="left", padx=(10, 0))
 
-        tk.Label(card, text=m["desc"], bg=CARD, fg=MUTED,
-                 font=("Segoe UI", 8), anchor="w").pack(anchor="w", pady=(2, 6))
+        desc_fg = MUTED if m.get("recommended", True) else "#6b5b70"
+        tk.Label(card, text=m["desc"], bg=CARD, fg=desc_fg,
+                 font=("Segoe UI", 8), anchor="w",
+                 wraplength=600, justify="left").pack(anchor="w", pady=(2, 6))
 
         status_lbl = tk.Label(card, text="", bg=CARD, fg=MUTED,
                                font=("Segoe UI", 8))
