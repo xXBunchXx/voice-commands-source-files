@@ -454,7 +454,7 @@ def _launch(app_name: str) -> None:
             import webbrowser
             webbrowser.open(path)
         elif _is_folder(path):
-            subprocess.Popen(["explorer.exe", path])
+            os.startfile(path)
         else:
             os.startfile(path)
     else:
