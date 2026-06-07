@@ -439,7 +439,9 @@ def _set_foreground(hwnd: int) -> None:
 
 
 def _is_url(path: str) -> bool:
-    return path.startswith(("http://", "https://"))
+    """True for any URI-scheme path (http://, steam://, ms-settings: etc).
+    Windows file paths never contain '://' so this is safe."""
+    return "://" in path or path.startswith("ms-")
 
 def _is_folder(path: str) -> bool:
     return pathlib.Path(path).is_dir()
