@@ -33,9 +33,13 @@ def _read_version() -> str:
 
 
 def _load_icon() -> Image.Image | None:
-    """Load icon.png if available, otherwise return None."""
+    """Load icon.png, auto-crop transparent padding, and return it."""
     try:
-        return Image.open(_resource_path("icon.png")).convert("RGBA")
+        img = Image.open(_resource_path("icon.png")).convert("RGBA")
+        bb  = img.getbbox()          # tight bounding box of non-transparent pixels
+        if bb:
+            img = img.crop(bb)
+        return img
     except Exception:
         return None
 
