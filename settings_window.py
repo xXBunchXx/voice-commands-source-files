@@ -598,8 +598,8 @@ class SettingsWidget(tk.Frame):
         tk.Label(title_bar, text=title_text, bg=ACC, fg="#fff",
                  font=("Segoe UI Semibold", 12)).pack()
 
-        cap_bar     = tk.Frame(card, bg="#1a1a2e", pady=5)
-        cap_bar_lbl = tk.Label(cap_bar, text="", bg="#1a1a2e", fg=AMBER,
+        cap_bar     = tk.Frame(card, bg="#0d1525", pady=5)
+        cap_bar_lbl = tk.Label(cap_bar, text="", bg="#0d1525", fg=AMBER,
                                font=("Segoe UI Semibold", 9))
         cap_bar_lbl.pack()
 
