@@ -722,10 +722,8 @@ class AppManagerWidget(tk.Frame):
                        (self.e_edit_spoken, spoken)):
             e.delete(0, "end")
             e.insert(0, val)
-        # Populate number slot dropdown
-        slots    = user_config.get_app_slots()          # {number_word: display_name}
-        cur_slot = next((k for k, v in slots.items() if v == name), None)
-        self._slot_var.set(cur_slot if cur_slot else "— none —")
+        # Update train hint
+        self._refresh_train_hint(name)
 
     def _on_select(self, _=None):
         name = self.combo_var.get()
