@@ -1084,6 +1084,34 @@ _stop_event     = _threading.Event()
 _restart_requested = False
 
 
+_SMALL_MODEL_NAME = "vosk-model-small-en-us-0.15"
+
+
+def _dual_model_filter(main_text: str, ref_text: str) -> str:
+    """Compare the first word of *main_text* against *ref_text* (the small
+    model's output).  If they disagree, the main model has likely prepended a
+    hallucinated word — strip it and return the remainder.
+
+    Examples
+    --------
+    main="open skip",   ref="skip"         → "skip"
+    main="open firefox",ref="open firefox" → "open firefox"  (agree, untouched)
+    main="skip",        ref=""             → "skip"          (no ref, untouched)
+    """
+    if not ref_text or not main_text:
+        return main_text
+    main_words = main_text.split()
+    ref_words  = ref_text.split()
+    if len(main_words) <= 1:
+        return main_text          # nothing to strip
+    if main_words[0] != ref_words[0]:
+        stripped = " ".join(main_words[1:])
+        print(f"  ✂  Dual-model: main='{main_words[0]}' ref='{ref_words[0]}' "
+              f"→ stripped leading word → '{stripped}'")
+        return stripped
+    return main_text
+
+
 def run(stop_event: _threading.Event | None = None) -> bool:
     """Start the voice engine.  Returns True if a restart was requested."""
     global APPS, PROC_NAMES, MODEL_PATH, _stop_event, _restart_requested
@@ -1106,11 +1134,32 @@ def run(stop_event: _threading.Event | None = None) -> bool:
     _stop_event        = stop_event
     _restart_requested = False
 
+    # ── Load main model ───────────────────────────────────────────────────
     print("Loading model...")
     model = Model(MODEL_PATH)
+    grammar = build_grammar()
     rec   = KaldiRecognizer(model, SAMPLE_RATE)
-    rec.SetGrammar(build_grammar())
+    rec.SetGrammar(grammar)
     rec.SetWords(True)
+
+    # ── Optionally load small reference model for dual-model ghost check ──
+    # When the main model is NOT the small model itself, try to load the small
+    # model from the same folder.  It runs in parallel, receiving the same audio,
+    # and its first word is used to validate the main model's output.
+    rec_ref = None
+    _ref_last_text = ""          # most recent finalised text from the ref model
+
+    small_path = pathlib.Path(MODEL_PATH).parent / _SMALL_MODEL_NAME
+    if small_path.exists() and pathlib.Path(MODEL_PATH).name != _SMALL_MODEL_NAME:
+        try:
+            print(f"Loading reference model ({_SMALL_MODEL_NAME}) for dual-model ghost check…")
+            model_ref = Model(str(small_path))
+            rec_ref   = KaldiRecognizer(model_ref, SAMPLE_RATE)
+            rec_ref.SetGrammar(grammar)
+            print("  ✓  Dual-model ghost check active.")
+        except Exception as _e:
+            print(f"  ✗  Could not load reference model: {_e}")
+            rec_ref = None
 
     print_diagnostic()
 
@@ -1131,18 +1180,46 @@ def run(stop_event: _threading.Event | None = None) -> bool:
     try:
         while not stop_event.is_set():
             data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
+
+            # ── Feed reference model (keep it in sync) ────────────────────
+            if rec_ref is not None:
+                if rec_ref.AcceptWaveform(data):
+                    # Consume the final result so the ref model's state stays
+                    # clean; store it in case the main model finalises soon.
+                    r = json.loads(rec_ref.Result())
+                    t = r.get("text", "").strip().lower()
+                    if t:
+                        _ref_last_text = t
+
+            # ── Main model ────────────────────────────────────────────────
             if rec.AcceptWaveform(data):
                 result = json.loads(rec.Result())
                 text   = result.get("text", "").strip().lower()
                 if not text:
                     continue
+
+                # Dual-model first-word check
+                if rec_ref is not None:
+                    # Prefer the ref model's current partial (it reflects the
+                    # same utterance); fall back to its last finalised text.
+                    ref_partial = json.loads(
+                        rec_ref.PartialResult()
+                    ).get("partial", "").strip().lower()
+                    ref = ref_partial or _ref_last_text
+                    text = _dual_model_filter(text, ref)
+                    if not text:
+                        continue
+
                 conf = average_confidence(result)
                 if conf >= CONFIDENCE_THRESHOLD:
                     if handle_command(text):
-                        # Ghost suppressor just tripped — flush Vosk's decoder
-                        # so the contaminated audio state doesn't bleed into the
+                        # Ghost suppressor tripped — flush both decoders so
+                        # the contaminated audio state can't bleed into the
                         # next real command.
                         rec.Reset()
+                        if rec_ref is not None:
+                            rec_ref.Reset()
+                            _ref_last_text = ""
                 else:
                     print(f"💤  Low confidence ({conf:.0%}): '{text}' — ignored")
             else:
