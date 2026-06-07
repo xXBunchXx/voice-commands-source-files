@@ -101,6 +101,36 @@ def _builtin_apps() -> list[dict]:
 
 # ── Registry scanner ──────────────────────────────────────────────────────────
 
+def _scan_folder(folder: str) -> list[dict]:
+    """Scan a folder (up to 3 levels deep) for exe files large enough to be a game/app."""
+    results = []
+    seen = set()
+    base = pathlib.Path(folder)
+    if not base.is_dir():
+        return results
+    for exe in list(base.glob("*.exe")) + \
+               list(base.glob("*/*.exe")) + \
+               list(base.glob("*/*/*.exe")):
+        key = str(exe).lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        try:
+            if exe.stat().st_size < 200_000:   # skip tiny helpers < 200 KB
+                continue
+        except Exception:
+            continue
+        voice_name = _to_voice_name(exe.stem)
+        results.append({
+            "display": f"{exe.stem}  ({base.name})",
+            "name":    voice_name,
+            "path":    str(exe),
+            "proc":    exe.name,
+        })
+    results.sort(key=lambda x: x["display"].lower())
+    return results
+
+
 def _scan_registry() -> list[dict]:
     """Return list of {name, path, proc} dicts from the Windows registry."""
     import winreg
