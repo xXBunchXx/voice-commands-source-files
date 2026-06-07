@@ -1303,7 +1303,7 @@ class SettingsWidget(tk.Frame):
                     ctx.verify_mode = ssl.CERT_NONE
 
                 req  = urllib.request.Request(
-                    url, headers={"User-Agent": "VoiceCommands/1.0"})
+                    url, headers={"User-Agent": "Echo/1.0"})
                 with urllib.request.urlopen(req, context=ctx, timeout=120) as resp:
                     total      = int(resp.headers.get("Content-Length", 0))
                     downloaded = 0
