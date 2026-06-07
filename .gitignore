@@ -5,3 +5,7 @@ dist/
 *.zip
 __pycache__/
 *.pyc
+
+# Stray files
+'+$n)
+output.log

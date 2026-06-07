@@ -123,19 +123,21 @@ xcopy /E /I /Y "vosk-model-small-en-us-0.15" "dist\vosk-model-small-en-us-0.15"
 
 echo.
 echo Zipping dist\ into Echo.zip ...
-powershell -NoProfile -Command "$src=Resolve-Path 'dist';Add-Type -Assembly System.IO.Compression.FileSystem;if(Test-Path 'Echo.zip'){Remove-Item 'Echo.zip'};[System.IO.Compression.ZipFile]::CreateFromDirectory($src,(Resolve-Path '.').Path+'\Echo.zip')"
+python -c "import shutil,pathlib;z=pathlib.Path('Echo.zip');z.unlink(missing_ok=True);shutil.make_archive('Echo','zip','dist')"
 
 for /f "tokens=*" %%v in (version.txt) do set NEW_VER=%%v
 
 :: ── Commit source files only (zip/dist excluded by .gitignore) ────────────────
 echo.
 echo Committing source to GitHub...
+:: Clean up any stray files before committing
+if exist "'+$n)" del /f /q "'+$n)"
 :: Remove dist/ and zip from tracking if they were ever committed (gitignore won't untrack them)
 git rm --cached -r dist/ >nul 2>&1
 git rm --cached Echo.zip >nul 2>&1
 :: Stage all source files
 git add version.txt main.py user_config.py voice_controls.py manage_apps.py settings_window.py voice_templates.py .gitignore build.bat
-git commit -m "%BUILD_TYPE% v%NEW_VER%"
+git commit --allow-empty -m "%BUILD_TYPE% v%NEW_VER%"
 git push
 if errorlevel 1 (
     echo.
