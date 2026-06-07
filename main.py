@@ -278,7 +278,7 @@ def _make_tray_image() -> Image.Image:
     size = 64
     img  = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     d    = ImageDraw.Draw(img)
-    d.ellipse([0, 0, size - 1, size - 1], fill="#7c6af7")
+    d.ellipse([0, 0, size - 1, size - 1], fill="#1a56db")
     d.rounded_rectangle([22, 10, 42, 38], radius=8, fill="white")
     d.line([(32, 38), (32, 50)], fill="white", width=3)
     d.line([(22, 50), (42, 50)], fill="white", width=3)
@@ -372,7 +372,7 @@ class StatusOverlay:
         self._win.attributes("-alpha", 0.90)
         self._win.configure(bg="#313244")
         self._win.withdraw()
-        outer = tk.Frame(self._win, bg="#7c6af7", padx=2, pady=2)
+        outer = tk.Frame(self._win, bg="#1a56db", padx=2, pady=2)
         outer.pack()
         inner = tk.Frame(outer, bg="#1e1e2e", padx=20, pady=10)
         inner.pack()
