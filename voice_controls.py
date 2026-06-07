@@ -797,10 +797,6 @@ def build_grammar() -> str:
             words.append(f"{pw} {_spoken(app)}")
 
     # Prefix commands — cross-product of every alias with every app / position
-    # Also include number slots (one/two/…/nine) so hard-to-pronounce apps can
-    # be triggered reliably regardless of spoken name.
-    _nums = _SLOT_NUMBERS  # shorthand
-
     for ow in _cw_all("open"):
         words.append(ow)
         words.append(f"{ow} all")
@@ -809,30 +805,22 @@ def build_grammar() -> str:
             words.append(f"{ow} new {_spoken(app)}")
             for pos in SNAP_POSITIONS:
                 words.append(f"{ow} {_spoken(app)} {pos}")
-        for n in _nums:
-            words.append(f"{ow} {n}")
 
     for mw in _cw_all("minimise"):
         words.append(mw)
         words.append(f"{mw} all")
         for app in APPS:
             words.append(f"{mw} {_spoken(app)}")
-        for n in _nums:
-            words.append(f"{mw} {n}")
 
     for xw in _cw_all("maximise"):
         words.append(xw)
         for app in APPS:
             words.append(f"{xw} {_spoken(app)}")
-        for n in _nums:
-            words.append(f"{xw} {n}")
 
     for cw in _cw_all("close"):
         words.append(cw)
         for app in APPS:
             words.append(f"{cw} {_spoken(app)}")
-        for n in _nums:
-            words.append(f"{cw} {n}")
 
     for mvw in _cw_all("move"):
         for pos in SNAP_POSITIONS:
