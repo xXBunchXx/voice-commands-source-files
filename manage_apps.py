@@ -681,6 +681,34 @@ class AppManagerWindow(tk.Toplevel):
         self._reload()
         self._flash(f'✓  Added folder "{name}" → {folder}')
 
+    def _add_steam_game(self):
+        dlg = _SimpleDialog(self,
+            title="Add Steam Game",
+            icon="🎮",
+            fields=[
+                ("Voice command name", "e.g.  cyberpunk"),
+                ("Steam App ID",
+                 "Find it on store.steampowered.com — it's the number in the URL.\n"
+                 "e.g. for Half-Life 2 the URL is /app/220/ so the ID is  220"),
+            ])
+        self.wait_window(dlg)
+        if not dlg.result:
+            return
+        name, app_id = dlg.result
+        name   = name.strip().lower()
+        app_id = app_id.strip()
+        if not name or not app_id:
+            return
+        if not app_id.isdigit():
+            messagebox.showwarning("Invalid ID",
+                                   "Steam App ID must be a number (e.g. 730).",
+                                   parent=self)
+            return
+        path = f"steam://rungameid/{app_id}"
+        user_config.add_entry(name, path, "steam.exe")
+        self._reload()
+        self._flash(f'✓  Added Steam game "{name}" (App ID {app_id})')
+
     def _open_scan(self):
         dlg = ScanDialog(self)
         dlg.grab_set()
