@@ -276,8 +276,8 @@ def _setup_tray(root: tk.Tk) -> pystray.Icon:
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Exit", _on_exit),
     )
-    icon = pystray.Icon("VoiceCommands", _make_tray_image(),
-                        "Voice Commands", menu)
+    icon = pystray.Icon("Echo", _make_tray_image(),
+                        "Echo", menu)
     threading.Thread(target=icon.run, daemon=True).start()
     return icon
 
