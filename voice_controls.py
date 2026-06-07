@@ -1150,7 +1150,8 @@ def run(stop_event: _threading.Event | None = None) -> bool:
     _ref_last_text = ""          # most recent finalised text from the ref model
 
     small_path = pathlib.Path(MODEL_PATH).parent / _SMALL_MODEL_NAME
-    if small_path.exists() and pathlib.Path(MODEL_PATH).name != _SMALL_MODEL_NAME:
+    dual_enabled = user_config.get_dual_model_check()
+    if dual_enabled and small_path.exists() and pathlib.Path(MODEL_PATH).name != _SMALL_MODEL_NAME:
         try:
             print(f"Loading reference model ({_SMALL_MODEL_NAME}) for dual-model ghost check…")
             model_ref = Model(str(small_path))
@@ -1160,6 +1161,9 @@ def run(stop_event: _threading.Event | None = None) -> bool:
         except Exception as _e:
             print(f"  ✗  Could not load reference model: {_e}")
             rec_ref = None
+    elif dual_enabled and not small_path.exists() and pathlib.Path(MODEL_PATH).name != _SMALL_MODEL_NAME:
+        print(f"  ℹ  Dual-model noise filter enabled but small model not found at {small_path}")
+        print(f"     Download '{_SMALL_MODEL_NAME}' in Settings → Models to activate it.")
 
     print_diagnostic()
 
