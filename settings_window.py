@@ -492,7 +492,7 @@ class SettingsWidget(tk.Frame):
             is_custom_group = ctx_name in groups
             is_known        = ctx_name in _KNOWN_CONTEXTS
             icon  = _CTX_ICONS.get(ctx_name, "👤" if is_custom_group else "🔧")
-            color = _CTX_COLOURS.get(ctx_name, "#93c5fd" if is_custom_group else AMBER)
+            color = _CTX_COLOURS.get(ctx_name, "#2d6ab3" if is_custom_group else AMBER)
 
             if is_known:
                 label = ctx_name
