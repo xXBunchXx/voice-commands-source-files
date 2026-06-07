@@ -1119,7 +1119,10 @@ class SettingsWidget(tk.Frame):
         self._refresh_model_statuses()
 
     def _build_model_card(self, parent, m: dict, scroll_fn):
-        name = m["name"]
+        name       = m["name"]
+        is_default = m.get("is_default", False)
+        is_small   = (name == "vosk-model-small-en-us-0.15")
+
         card = tk.Frame(parent, bg=CARD, padx=14, pady=10)
         card.pack(fill="x", padx=4, pady=4)
         card.bind("<MouseWheel>", scroll_fn)
@@ -1127,19 +1130,53 @@ class SettingsWidget(tk.Frame):
         # Header row
         hdr = tk.Frame(card, bg=CARD)
         hdr.pack(fill="x")
-        name_fg = FG if m.get("recommended", True) else MUTED
-        tk.Label(hdr, text=name, bg=CARD, fg=name_fg,
+        tk.Label(hdr, text=name, bg=CARD, fg=FG,
                  font=("Segoe UI Semibold", 10)).pack(side="left")
         tk.Label(hdr, text=m["size"], bg=CARD, fg=MUTED,
                  font=("Segoe UI", 8)).pack(side="left", padx=(10, 0))
-        if not m.get("recommended", True):
-            tk.Label(hdr, text="⚠ not grammar-safe", bg=CARD, fg=AMBER,
-                     font=("Segoe UI", 8)).pack(side="left", padx=(10, 0))
 
-        desc_fg = MUTED if m.get("recommended", True) else "#6b5b70"
-        tk.Label(card, text=m["desc"], bg=CARD, fg=desc_fg,
+        tk.Label(card, text=m["desc"], bg=CARD, fg=MUTED,
                  font=("Segoe UI", 8), anchor="w",
                  wraplength=600, justify="left").pack(anchor="w", pady=(2, 6))
+
+        # Noise-filter checkbox — only on the default (medium) card
+        if is_default:
+            import user_config as _uc
+            _small_name = "vosk-model-small-en-us-0.15"
+            noise_var = tk.BooleanVar(value=_uc.get_dual_model_check())
+
+            def _on_noise_toggle():
+                _uc.set_dual_model_check(noise_var.get())
+
+            noise_row = tk.Frame(card, bg=CARD)
+            noise_row.pack(anchor="w", pady=(0, 4))
+            tk.Checkbutton(
+                noise_row, text="Enable noise filter  (uses the small model to remove random words heard at the start of commands)",
+                variable=noise_var, command=_on_noise_toggle,
+                bg=CARD, fg=FG, selectcolor=ENTRY_BG,
+                activebackground=CARD, activeforeground=FG,
+                font=("Segoe UI", 8), cursor="hand2",
+            ).pack(side="left")
+
+            # Indicate whether the small model is already present
+            def _update_noise_hint():
+                try:
+                    exe_dir = pathlib.Path(_uc.get_model_path()).parent
+                    present = (exe_dir / _small_name).is_dir()
+                except Exception:
+                    present = False
+                hint_lbl.config(
+                    text="✓ small model found" if present else
+                         "⚠ download the small model above to use this",
+                    fg=GRN if present else AMBER,
+                )
+            hint_lbl = tk.Label(noise_row, text="", bg=CARD,
+                                font=("Segoe UI", 8))
+            hint_lbl.pack(side="left", padx=(8, 0))
+            _update_noise_hint()
+            # Re-check whenever the tab is shown so the hint stays current
+            card.bind("<Visibility>", lambda e: _update_noise_hint())
+            self._noise_hint_refresh = _update_noise_hint  # callable from outside
 
         status_lbl = tk.Label(card, text="", bg=CARD, fg=MUTED,
                                font=("Segoe UI", 8))
@@ -1158,24 +1195,36 @@ class SettingsWidget(tk.Frame):
                             font=("Segoe UI Semibold", 9), padx=8, pady=4,
                             cursor="hand2",
                             command=lambda n=name: self._select_model(n))
-        dl_btn = tk.Button(btn_row, text="⬇  Download",
-                           bg=ACC, fg="#fff", activebackground=ACC,
-                           activeforeground="#fff", relief="flat",
-                           font=("Segoe UI Semibold", 9), padx=8, pady=4,
-                           cursor="hand2",
-                           command=lambda info=m, pb=progress_lbl,
-                                          sb=status_lbl, db=None:
-                               self._download_model(info, progress_lbl, status_lbl))
+
+        btn_kw = dict(bg=ACC, fg="#fff", activebackground=ACC,
+                      activeforeground="#fff", relief="flat",
+                      font=("Segoe UI Semibold", 9), padx=8, pady=4,
+                      cursor="hand2")
+
+        def _after_dl():
+            """Called when a download finishes — refresh the noise hint."""
+            if hasattr(self, "_noise_hint_refresh"):
+                self._noise_hint_refresh()
+            self._refresh_model_statuses()
+
+        if "url" in m:
+            dl_btn = tk.Button(btn_row, text="⬇  Download", **btn_kw,
+                               command=lambda info=m:
+                                   self._download_model(info, progress_lbl,
+                                                        status_lbl, _after_dl))
+        else:
+            dl_btn = None
 
         self._model_cards[name] = {
-            "status": status_lbl,
+            "status":   status_lbl,
             "progress": progress_lbl,
-            "use_btn": use_btn,
-            "dl_btn": dl_btn,
+            "use_btn":  use_btn,
+            "dl_btn":   dl_btn,
         }
 
         use_btn.pack(side="right", padx=(4, 0))
-        dl_btn.pack(side="right")
+        if dl_btn:
+            dl_btn.pack(side="right")
 
     def _refresh_model_statuses(self):
         """Update each model card to show downloaded/active status."""
