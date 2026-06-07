@@ -1188,8 +1188,6 @@ def run(stop_event: _threading.Event | None = None) -> bool:
             # ── Feed reference model (keep it in sync) ────────────────────
             if rec_ref is not None:
                 if rec_ref.AcceptWaveform(data):
-                    # Consume the final result so the ref model's state stays
-                    # clean; store it in case the main model finalises soon.
                     r = json.loads(rec_ref.Result())
                     t = r.get("text", "").strip().lower()
                     if t:
@@ -1199,38 +1197,34 @@ def run(stop_event: _threading.Event | None = None) -> bool:
             if rec.AcceptWaveform(data):
                 result = json.loads(rec.Result())
                 text   = result.get("text", "").strip().lower()
-                if not text:
+                if not text or text == "[unk]":
                     continue
 
-                # Dual-model first-word check
+                # Dual-model noise filter
+                noise_word = None
                 if rec_ref is not None:
-                    # Prefer the ref model's current partial (it reflects the
-                    # same utterance); fall back to its last finalised text.
                     ref_partial = json.loads(
                         rec_ref.PartialResult()
                     ).get("partial", "").strip().lower()
-                    ref = ref_partial or _ref_last_text
-                    text = _dual_model_filter(text, ref)
+                    ref  = ref_partial or _ref_last_text
+                    text, noise_word = _dual_model_filter(text, ref)
                     if not text:
                         continue
 
                 conf = average_confidence(result)
                 if conf >= CONFIDENCE_THRESHOLD:
+                    # Single clean log line — shows what was heard and whether
+                    # the noise filter removed a ghost word
+                    noise_note = f"  [noise filter removed '{noise_word}']" if noise_word else ""
+                    print(f"🎤  '{text}'{noise_note}")
+
                     if handle_command(text):
-                        # Ghost suppressor tripped — flush both decoders so
-                        # the contaminated audio state can't bleed into the
-                        # next real command.
                         rec.Reset()
                         if rec_ref is not None:
                             rec_ref.Reset()
                             _ref_last_text = ""
                 else:
-                    print(f"💤  Low confidence ({conf:.0%}): '{text}' — ignored")
-            else:
-                partial = json.loads(rec.PartialResult())
-                text    = partial.get("partial", "").strip().lower()
-                if text:
-                    print(f"👂  Hearing: '{text}'")
+                    print(f"💤  Low confidence ({conf:.0%}): ignored")
     except KeyboardInterrupt:
         print("\nStopped.")
     finally:
