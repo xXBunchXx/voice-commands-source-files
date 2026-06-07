@@ -317,7 +317,18 @@ class ScanDialog(tk.Toplevel):
 
     def _do_scan(self):
         results = _scan_registry()
-        self.after(0, lambda: self._populate(results))
+        for folder in user_config.get_scan_folders():
+            results += _scan_folder(folder)
+        # Deduplicate by path
+        seen = set()
+        deduped = []
+        for r in results:
+            k = r["path"].lower()
+            if k not in seen:
+                seen.add(k)
+                deduped.append(r)
+        deduped.sort(key=lambda x: x["display"].lower())
+        self.after(0, lambda: self._populate(deduped))
 
     def _populate(self, results):
         self._results = results
