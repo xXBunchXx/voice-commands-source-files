@@ -836,6 +836,7 @@ def build_grammar() -> str:
 
     for cw in _cw_all("close"):
         words.append(cw)
+        words.append(f"{cw} current")
         for app in APPS:
             words.append(f"{cw} {_spoken(app)}")
 
