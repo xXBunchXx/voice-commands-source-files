@@ -262,8 +262,8 @@ class AppManagerWidget(tk.Frame):
         self._btn(add_card, "Add Entry", self._on_add).grid(
             row=4, column=0, columnspan=3, pady=(10, 0), sticky="e")
 
-        # Delete / Rename
-        del_sec = self._section(page, "🗑  Delete / Rename Entry")
+        # Edit / Rename / Delete
+        del_sec = self._section(page, "✏️  Edit / Rename / Delete Entry")
         del_sec.pack(fill="x", padx=PAD, pady=(PAD, 0))
         del_card = tk.Frame(del_sec, bg=CARD, padx=10, pady=10)
         del_card.pack(fill="x")
@@ -278,16 +278,34 @@ class AppManagerWidget(tk.Frame):
         self.combo_var = tk.StringVar()
         self.combo = ttk.Combobox(del_card, textvariable=self.combo_var,
                                   state="readonly", width=52, font=("Segoe UI", 10))
-        self.combo.pack(fill="x", pady=(4, 8))
-
-        self.preview = tk.Label(del_card, text="", bg=CARD, fg="#a6adc8",
-                                font=("Consolas", 9), anchor="w", justify="left")
-        self.preview.pack(fill="x", pady=(0, 8))
+        self.combo.pack(fill="x", pady=(4, 6))
         self.combo.bind("<<ComboboxSelected>>", self._on_select)
 
+        # Editable fields for the selected entry
+        edit_grid = tk.Frame(del_card, bg=CARD)
+        edit_grid.pack(fill="x", pady=(0, 6))
+
+        self._lbl(edit_grid, "Path / URL").grid(row=0, column=0, sticky="w")
+        self._lbl(edit_grid, "Process name").grid(row=0, column=1, sticky="w", padx=(10, 0))
+        self._lbl(edit_grid, "Spoken name").grid(row=0, column=2, sticky="w", padx=(10, 0))
+
+        self.e_edit_path   = self._inp(edit_grid, 36)
+        self.e_edit_proc   = self._inp(edit_grid, 22)
+        self.e_edit_spoken = self._inp(edit_grid, 18)
+        self.e_edit_path.grid  (row=1, column=0, sticky="ew", pady=(2, 0))
+        self.e_edit_proc.grid  (row=1, column=1, sticky="ew", padx=(10, 0), pady=(2, 0))
+        self.e_edit_spoken.grid(row=1, column=2, sticky="ew", padx=(10, 0), pady=(2, 0))
+
+        # Browse button for path
+        browse_row = tk.Frame(del_card, bg=CARD)
+        browse_row.pack(fill="x", pady=(4, 0))
+        self._btn(browse_row, "📂 Browse", self._browse_edit_exe, MUTED).pack(side="left")
+        self._btn(browse_row, "💾  Save Changes", self._on_save_edit, GRN).pack(side="left", padx=(8, 0))
+
+        # Rename row
         rename_row = tk.Frame(del_card, bg=CARD)
-        rename_row.pack(fill="x", pady=(0, 8))
-        self._lbl(rename_row, "Rename to:").pack(side="left")
+        rename_row.pack(fill="x", pady=(10, 4))
+        self._lbl(rename_row, "Rename voice name to:").pack(side="left")
         self.e_rename = self._inp(rename_row, width=20)
         self.e_rename.pack(side="left", padx=(8, 8))
         self._btn(rename_row, "Rename", self._on_rename).pack(side="left")
