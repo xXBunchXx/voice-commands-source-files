@@ -7,15 +7,15 @@ from tkinter import ttk, messagebox, filedialog
 import pathlib
 import user_config
 
-BG       = "#1e1e2e"
-CARD     = "#2a2a3e"
-ACC      = "#7c6af7"
-FG       = "#cdd6f4"
-ENTRY_BG = "#313244"
-MUTED    = "#585b70"
-GRN      = "#a6e3a1"
-RED      = "#f38ba8"
-AMBER    = "#fab387"
+BG       = "#0a1020"
+CARD     = "#0f1a2e"
+ACC      = "#1a56db"
+FG       = "#d4e0f0"
+ENTRY_BG = "#162033"
+MUTED    = "#3d5470"
+GRN      = "#4ade80"
+RED      = "#f87171"
+AMBER    = "#fbbf24"
 
 _KNOWN_CONTEXTS = ("browser", "explorer", "editor", "any")
 _CTX_ICONS      = {"browser": "🌐", "explorer": "📁", "editor": "✏️", "any": "🌍"}
