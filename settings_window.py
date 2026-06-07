@@ -760,8 +760,8 @@ class SettingsWidget(tk.Frame):
 
         def _make_step_row(idx, step):
             alt    = idx % 2 == 0
-            row_bg = "#2e2e44" if alt else ENTRY_BG
-            e_bg   = CARD if alt else "#3a3a54"
+            row_bg = "#1a2d44" if alt else ENTRY_BG
+            e_bg   = CARD if alt else "#1e3550"
 
             f = tk.Frame(steps_inner, bg=row_bg, pady=4, padx=6)
             f.pack(fill="x")
