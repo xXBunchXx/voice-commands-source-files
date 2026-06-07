@@ -9,14 +9,15 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import user_config
 
-BG       = "#0a1020"
-CARD     = "#0f1a2e"
-ACC      = "#1a56db"
-FG       = "#ffffff"
-ENTRY_BG = "#162033"
-MUTED    = "#3d5470"
-GRN      = "#4ade80"
-RED      = "#f87171"
+BG          = "#0a1020"
+CARD        = "#0f1a2e"
+ACC         = "#1a56db"
+ACCENT_TEXT = "#4a8fe8"
+FG          = "#ffffff"
+ENTRY_BG    = "#162033"
+MUTED       = "#3d5470"
+GRN         = "#4ade80"
+RED         = "#f87171"
 
 
 # ── Built-in Windows apps ─────────────────────────────────────────────────────
