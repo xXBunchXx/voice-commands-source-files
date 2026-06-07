@@ -731,6 +731,38 @@ class AppManagerWidget(tk.Frame):
         self.e_rename.delete(0, "end")
         self.e_rename.insert(0, name)
 
+    def _refresh_train_hint(self, app_name: str):
+        """Update the train hint label for the currently selected app."""
+        spoken = user_config.get_spoken_names().get(app_name, "")
+        if not spoken:
+            self._train_hint.config(text="Set a spoken name first to enable training")
+            self._train_btn.config(state="disabled")
+            return
+        try:
+            import voice_templates as vt
+            n = vt.template_count(spoken)
+        except Exception:
+            n = 0
+        if n == 0:
+            self._train_hint.config(text=f'No samples recorded for "{spoken}"', fg=MUTED)
+        else:
+            self._train_hint.config(
+                text=f'✓ {n} sample{"s" if n != 1 else ""} recorded for "{spoken}"',
+                fg=GRN)
+        self._train_btn.config(state="normal")
+
+    def _on_train(self):
+        """Open the voice training dialog for the currently selected app's spoken name."""
+        name   = self.combo_var.get()
+        spoken = self.e_edit_spoken.get().strip().lower() or \
+                 user_config.get_spoken_names().get(name, "")
+        if not spoken:
+            messagebox.showwarning("No spoken name",
+                                   "Fill in the Spoken name field first, then save.",
+                                   parent=self.winfo_toplevel())
+            return
+        _TrainDialog(self, name, spoken, on_close=lambda: self._refresh_train_hint(name))
+
     def _browse_edit_exe(self):
         """Browse for a new exe for the selected entry."""
         path = filedialog.askopenfilename(
