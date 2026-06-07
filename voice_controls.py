@@ -95,7 +95,12 @@ def _proc_matches_context(proc: str, context: str) -> bool:
         return proc in user_config.EXPLORER_PROCS
     if context == "editor":
         return proc in user_config.EDITOR_PROCS
-    return False
+    # Check user-defined custom groups  {"music": ["spotify.exe", "chrome.exe"]}
+    groups = user_config.get_custom_groups()
+    if context in groups:
+        return proc.lower() in [p.lower() for p in groups[context]]
+    # Direct proc name match  e.g. context == "spotify.exe"
+    return bool(proc) and proc.lower() == context.lower()
 
 
 def _execute_action(action) -> None:
