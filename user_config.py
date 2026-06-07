@@ -316,6 +316,22 @@ def set_context_commands(cmds: dict[str, dict[str, str]]) -> None:
     data["CONTEXT_COMMANDS"] = cmds
     save(data)
 
+def get_app_slots() -> dict[str, str]:
+    """Returns {number_word: display_name}  e.g. {"one": "aseprite", "two": "firefox"}"""
+    return load().get("APP_SLOTS", {})
+
+def set_app_slot(number_word: str, display_name: str) -> None:
+    """Assign *display_name* to a number slot, or clear the slot if display_name is empty."""
+    data  = load()
+    slots = data.setdefault("APP_SLOTS", {})
+    # Remove this app from any existing slot first (only one slot per app)
+    for k in list(slots.keys()):
+        if slots[k] == display_name:
+            del slots[k]
+    if number_word and display_name:
+        slots[number_word] = display_name
+    save(data)
+
 def get_custom_groups() -> dict[str, list[str]]:
     """Returns {group_name: [proc_name, ...]}  e.g. {"music": ["spotify.exe","chrome.exe"]}"""
     return load().get("CUSTOM_GROUPS", {})
