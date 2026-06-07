@@ -346,6 +346,7 @@ def _schema_defaults() -> dict:
         "VOLUME_STEPS":         DEFAULT_VOLUME_STEPS.copy(),
         "CONTEXT_COMMANDS":     {},   # empty = use all defaults
         "SCAN_FOLDERS":         [],
+        "CUSTOM_GROUPS":        {},   # {group_name: [proc_name, ...]}
         "OVERLAY_ENABLED":      True,
         "OVERLAY_POSITION":     "near cursor",
     }
