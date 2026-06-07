@@ -16,16 +16,28 @@ import pystray
 from PIL import Image, ImageDraw
 import user_config
 
-def _read_version() -> str:
-    # When frozen by PyInstaller, version.txt is extracted to sys._MEIPASS
+def _resource_path(name: str) -> pathlib.Path:
+    """Return path to a bundled resource whether frozen (PyInstaller) or in dev."""
     if getattr(sys, "frozen", False):
         base = pathlib.Path(sys._MEIPASS)
     else:
         base = pathlib.Path(__file__).resolve().parent
+    return base / name
+
+
+def _read_version() -> str:
     try:
-        return (base / "version.txt").read_text().strip()
+        return _resource_path("version.txt").read_text().strip()
     except Exception:
         return "0.0.0"
+
+
+def _load_icon() -> Image.Image | None:
+    """Load icon.png if available, otherwise return None."""
+    try:
+        return Image.open(_resource_path("icon.png")).convert("RGBA")
+    except Exception:
+        return None
 
 VERSION = _read_version()
 
