@@ -439,6 +439,21 @@ def main():
     root.configure(bg=BG)
     root.geometry("960x740")
 
+    # Dark title bar and border (Windows 11 DWM API)
+    try:
+        import ctypes
+        hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
+        # DWMWA_CAPTION_COLOR = 35, DWMWA_BORDER_COLOR = 34
+        # Colour format: 0x00BBGGRR  (BG=#0a1020 → R=0x0a G=0x10 B=0x20)
+        caption_col = ctypes.c_uint(0x0020100a)
+        border_col  = ctypes.c_uint(0x001a1510)   # slightly lighter than bg
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(
+            hwnd, 35, ctypes.byref(caption_col), ctypes.sizeof(caption_col))
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(
+            hwnd, 34, ctypes.byref(border_col),  ctypes.sizeof(border_col))
+    except Exception:
+        pass   # silently skip on older Windows
+
     # Set window icon
     _icon_img = _load_icon()
     if _icon_img is not None:
