@@ -397,7 +397,7 @@ class SettingsWidget(tk.Frame):
             hdr = tk.Frame(card, bg=CARD)
             hdr.pack(fill="x", pady=(0, 4))
             w = 18
-            _lbl(hdr, "Action", fg=ACCENT_TEXT, font=("Segoe UI Semibold", 8),
+            _lbl(hdr, "Action", fg=FG, font=("Segoe UI Semibold", 8),
                  width=w, anchor="w").pack(side="left")
             _lbl(hdr, "Trigger word(s)", fg=ACCENT_TEXT, font=("Segoe UI Semibold", 8),
                  anchor="w").pack(side="left")
