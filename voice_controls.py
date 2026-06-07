@@ -764,45 +764,45 @@ def build_grammar() -> str:
     _play_words = list(dict.fromkeys(_cw_all("play_pause") + ["play"]))
     for pw in _play_words:
         for app in APPS:
-            words.append(f"{pw} {app}")
+            words.append(f"{pw} {_spoken(app)}")
 
     # Prefix commands — cross-product of every alias with every app / position
     for ow in _cw_all("open"):
         words.append(ow)
         words.append(f"{ow} all")
         for app in APPS:
-            words.append(f"{ow} {app}")
-            words.append(f"{ow} new {app}")
+            words.append(f"{ow} {_spoken(app)}")
+            words.append(f"{ow} new {_spoken(app)}")
             for pos in SNAP_POSITIONS:
-                words.append(f"{ow} {app} {pos}")
+                words.append(f"{ow} {_spoken(app)} {pos}")
 
     for mw in _cw_all("minimise"):
         words.append(mw)
         words.append(f"{mw} all")
         for app in APPS:
-            words.append(f"{mw} {app}")
+            words.append(f"{mw} {_spoken(app)}")
 
     for xw in _cw_all("maximise"):
         words.append(xw)
         for app in APPS:
-            words.append(f"{xw} {app}")
+            words.append(f"{xw} {_spoken(app)}")
 
     for cw in _cw_all("close"):
         words.append(cw)
         for app in APPS:
-            words.append(f"{cw} {app}")
+            words.append(f"{cw} {_spoken(app)}")
 
     for mvw in _cw_all("move"):
         for pos in SNAP_POSITIONS:
             words.append(f"{mvw} {pos}")
         for app in APPS:
             for pos in SNAP_POSITIONS:
-                words.append(f"{mvw} {app} {pos}")
+                words.append(f"{mvw} {_spoken(app)} {pos}")
 
     for mgw in _cw_all("merge"):
         words.append(mgw)
         for app in APPS:
-            words.append(f"{mgw} {app}")
+            words.append(f"{mgw} {_spoken(app)}")
 
     # Volume
     for step in _VOLUME_STEPS:
