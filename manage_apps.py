@@ -691,14 +691,18 @@ class AppManagerWidget(tk.Frame):
         self._apps  = user_config.get_apps()
         self._procs = user_config.get_proc_names()
         names = sorted(self._apps.keys())
+        prev  = self.combo_var.get()          # keep selection if still present
         self.combo["values"] = names
         if names:
-            self.combo.set(names[0])
-            self._show_preview(names[0])
+            sel = prev if prev in names else names[0]
+            self.combo.set(sel)
+            self._show_preview(sel)
             self.e_rename.delete(0, "end")
-            self.e_rename.insert(0, names[0])
+            self.e_rename.insert(0, sel)
         else:
-            self.combo.set(""); self.preview.config(text="")
+            self.combo.set("")
+            for e in (self.e_edit_path, self.e_edit_proc, self.e_edit_spoken):
+                e.delete(0, "end")
             self.e_rename.delete(0, "end")
 
     def _show_preview(self, name: str):
