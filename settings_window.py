@@ -98,7 +98,7 @@ def _spin(parent, from_, to, var, width=6):
 
 def _section(parent, title):
     f = tk.Frame(parent, bg=parent["bg"] if hasattr(parent, "__getitem__") else BG)
-    tk.Label(f, text=title, bg=f["bg"], fg=ACCENT_TEXT,
+    tk.Label(f, text=title, bg=f["bg"], fg=FG,
              font=("Segoe UI Semibold", 10)).pack(anchor="w")
     tk.Frame(f, bg=ACCENT_TEXT, height=1).pack(fill="x", pady=(2, 8))
     return f
