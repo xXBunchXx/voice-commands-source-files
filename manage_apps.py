@@ -288,29 +288,20 @@ class AppManagerWidget(tk.Frame):
         self._lbl(edit_grid, "Path / URL").grid(row=0, column=0, sticky="w")
         self._lbl(edit_grid, "Process name").grid(row=0, column=1, sticky="w", padx=(10, 0))
         self._lbl(edit_grid, "Spoken name").grid(row=0, column=2, sticky="w", padx=(10, 0))
-        self._lbl(edit_grid, "Number slot",
-                  fg=MUTED, font=("Segoe UI", 8)).grid(row=0, column=3, sticky="w", padx=(10, 0))
 
-        self.e_edit_path   = self._inp(edit_grid, 34)
-        self.e_edit_proc   = self._inp(edit_grid, 20)
-        self.e_edit_spoken = self._inp(edit_grid, 16)
+        self.e_edit_path   = self._inp(edit_grid, 36)
+        self.e_edit_proc   = self._inp(edit_grid, 22)
+        self.e_edit_spoken = self._inp(edit_grid, 20)
         self.e_edit_path.grid  (row=1, column=0, sticky="ew", pady=(2, 0))
         self.e_edit_proc.grid  (row=1, column=1, sticky="ew", padx=(10, 0), pady=(2, 0))
         self.e_edit_spoken.grid(row=1, column=2, sticky="ew", padx=(10, 0), pady=(2, 0))
 
-        # Number slot — lets hard-to-pronounce apps be triggered by "open one" etc.
-        _slot_opts = ["— none —", "one", "two", "three", "four", "five",
-                      "six", "seven", "eight", "nine"]
-        self._slot_var = tk.StringVar(value="— none —")
-        slot_cb = ttk.Combobox(edit_grid, textvariable=self._slot_var,
-                               values=_slot_opts, state="readonly",
-                               width=9, font=("Segoe UI", 9))
-        slot_cb.grid(row=1, column=3, sticky="w", padx=(10, 0), pady=(2, 0))
-
-        hint = tk.Label(edit_grid,
-                        text='say "open one", "close one" etc.',
-                        bg=CARD, fg=MUTED, font=("Segoe UI", 8))
-        hint.grid(row=2, column=3, sticky="w", padx=(10, 0))
+        # Train button — record voice samples for the spoken name
+        self._train_btn = self._btn(edit_grid, "🎤 Train", self._on_train, MUTED)
+        self._train_btn.grid(row=1, column=3, sticky="w", padx=(8, 0), pady=(2, 0))
+        self._train_hint = tk.Label(edit_grid, text="", bg=CARD, fg=MUTED,
+                                    font=("Segoe UI", 8))
+        self._train_hint.grid(row=2, column=2, columnspan=2, sticky="w", padx=(10, 0))
 
         # Browse button for path
         browse_row = tk.Frame(del_card, bg=CARD)
