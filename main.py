@@ -586,8 +586,8 @@ def main():
     log_box.tag_config("cmd",   foreground="#4ade80")
     log_box.tag_config("low",   foreground="#f9e2af")
     log_box.tag_config("info",  foreground="#ffffff")
-    log_box.tag_config("error", foreground="#f38ba8")
-    log_box.tag_config("muted", foreground="#585b70")
+    log_box.tag_config("error", foreground="#f87171")
+    log_box.tag_config("muted", foreground="#3d5470")
 
     def _tag_for(text: str) -> str:
         t = text.lower()
