@@ -728,8 +728,14 @@ class AppManagerWidget(tk.Frame):
                 "Overwrite?", f'"{new}" already exists. Overwrite it?',
                 parent=self.winfo_toplevel()):
             return
+        # Preserve spoken name under new key
+        spoken_names = user_config.get_spoken_names()
+        old_spoken   = spoken_names.pop(old, "")
+        if old_spoken:
+            spoken_names[new] = old_spoken
         user_config.delete_entry(old)
         user_config.add_entry(new, self._apps.get(old, ""), self._procs.get(old, ""))
+        user_config.set_spoken_names(spoken_names)
         self._reload()
         self._flash(f'✓  Renamed "{old}" → "{new}".')
 
