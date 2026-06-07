@@ -421,6 +421,7 @@ def _schema_defaults() -> dict:
         "DUAL_MODEL_CHECK":     True, # run small model alongside main to strip noise words
         "OVERLAY_ENABLED":      True,
         "OVERLAY_POSITION":     "near cursor",
+        "VERSION":              APP_VERSION,
     }
 
 
