@@ -24,6 +24,21 @@ import sys
 APPDATA_DIR = pathlib.Path(os.getenv("APPDATA", "~")) / "VoiceCommands"
 CONFIG_FILE = APPDATA_DIR / "config.json"
 
+# ── Version ───────────────────────────────────────────────────────────────────
+APP_VERSION = "1.0.0.0"
+
+# Any config whose stored VERSION parses to less than this tuple is wiped to
+# defaults on next load.  Bump this only when a deliberate full reset is needed.
+# Under normal development leave RESET_BASELINE alone and just update APP_VERSION.
+RESET_BASELINE = (1, 0, 0, 0)
+
+
+def _parse_version(v: str) -> tuple[int, ...]:
+    try:
+        return tuple(int(x) for x in str(v).split("."))
+    except Exception:
+        return (0, 0, 0, 0)
+
 # ── Exe / script directory ────────────────────────────────────────────────────
 # When frozen by PyInstaller sys.executable is the .exe; otherwise it's python.
 # We use this to resolve the model path relative to wherever the exe lives.
