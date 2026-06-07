@@ -284,6 +284,46 @@ class ScanDialog(tk.Toplevel):
                               lambda e: self._canvas.yview_scroll(
                                   -1 * (e.delta // 120), "units"))
 
+        # ── Extra search folders ──────────────────────────────────────────────
+        folders_frame = tk.Frame(self, bg=BG)
+        folders_frame.pack(fill="x", padx=12, pady=(0, 4))
+        tk.Label(folders_frame, text="Extra search folders:", bg=BG, fg=MUTED,
+                 font=("Segoe UI Semibold", 8)).pack(side="left")
+
+        self._folders_lbl = tk.Label(folders_frame, text="", bg=BG, fg=FG,
+                                     font=("Segoe UI", 8), anchor="w")
+        self._folders_lbl.pack(side="left", padx=(6, 0), fill="x", expand=True)
+
+        def _add_scan_folder():
+            folder = filedialog.askdirectory(
+                title="Select extra folder to search (e.g. D:\\SteamLibrary\\steamapps\\common)",
+                parent=self)
+            if not folder:
+                return
+            folders = user_config.get_scan_folders()
+            if folder not in folders:
+                folders.append(folder)
+                user_config.set_scan_folders(folders)
+            self._refresh_folders_lbl()
+            self._status.config(text="Rescanning with new folder…")
+            threading.Thread(target=self._do_scan, daemon=True).start()
+
+        def _clear_scan_folders():
+            user_config.set_scan_folders([])
+            self._refresh_folders_lbl()
+            self._status.config(text="Rescanning…")
+            threading.Thread(target=self._do_scan, daemon=True).start()
+
+        tk.Button(folders_frame, text="➕ Add Folder", command=_add_scan_folder,
+                  bg=MUTED, fg="#fff", relief="flat",
+                  font=("Segoe UI Semibold", 8), padx=6, pady=2,
+                  cursor="hand2").pack(side="left", padx=(8, 0))
+        tk.Button(folders_frame, text="✕ Clear", command=_clear_scan_folders,
+                  bg=MUTED, fg="#fff", relief="flat",
+                  font=("Segoe UI Semibold", 8), padx=6, pady=2,
+                  cursor="hand2").pack(side="left", padx=(4, 0))
+        self._refresh_folders_lbl()
+
         # Bottom buttons
         bot = tk.Frame(self, bg=BG)
         bot.pack(fill="x", padx=12, pady=(0, 10))
