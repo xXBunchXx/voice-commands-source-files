@@ -407,6 +407,7 @@ def _schema_defaults() -> dict:
         "VOLUME_STEPS":         DEFAULT_VOLUME_STEPS.copy(),
         "CONTEXT_COMMANDS":     {},   # empty = use all defaults
         "SCAN_FOLDERS":         [],
+        "APP_SLOTS":            {},   # {number_word: display_name}
         "CUSTOM_GROUPS":        {},   # {group_name: [proc_name, ...]}
         "SPOKEN_NAMES":         {},   # {display_name: spoken_name}
         "DUAL_MODEL_CHECK":     True, # run small model alongside main to strip noise words
