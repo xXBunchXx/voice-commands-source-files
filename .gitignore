@@ -1,7 +1,7 @@
-# PyInstaller build artifacts (keep dist/VoiceCommands.exe but ignore junk)
+# PyInstaller build artifacts
 build/
+dist/
 *.spec
+*.zip
 __pycache__/
 *.pyc
-
-# Keep dist/ tracked so the exe is downloadable from GitHub
