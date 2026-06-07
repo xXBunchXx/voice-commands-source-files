@@ -100,7 +100,7 @@ def _version_tuple(v: str) -> tuple:
 
 def _do_update(root: tk.Tk, status_var: tk.StringVar) -> None:
     exe_path = pathlib.Path(sys.executable)
-    new_exe  = exe_path.with_name("VoiceCommands_new.exe")
+    new_exe  = exe_path.with_name("Echo_new.exe")
 
     def _download():
         try:
