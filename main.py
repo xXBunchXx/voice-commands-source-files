@@ -272,7 +272,7 @@ def _setup_tray(root: tk.Tk) -> pystray.Icon:
         root.after(0, _quit_app)
 
     menu = pystray.Menu(
-        pystray.MenuItem("Show Voice Commands", _on_show, default=True),
+        pystray.MenuItem("Show Echo", _on_show, default=True),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Exit", _on_exit),
     )
