@@ -581,7 +581,7 @@ def main():
     SettingsWidget(settings_tab).pack(fill="both", expand=True)
 
     # ── Startup log ────────────────────────────────────────────────────────────
-    _log_queue.put(f"Voice Commands v{VERSION} started\n")
+    _log_queue.put(f"Echo v{VERSION} started\n")
     _log_queue.put(f"Model path : {user_config.get_model_path()}\n")
     _log_queue.put(f"Model found: {pathlib.Path(user_config.get_model_path()).is_dir()}\n")
     _log_queue.put(f"Config     : {user_config.config_path()}\n")
