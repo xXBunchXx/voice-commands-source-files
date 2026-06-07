@@ -864,10 +864,26 @@ def handle_command(text: str) -> None:
         keyboard.send("previous track")
         time.sleep(0.05)
         keyboard.send("previous track")
-    elif text in _cw_all("play_pause") or text == "play":
-        print("⏸  Toggling playback!")
-        _status("Play / Pause")
-        keyboard.send("play/pause media")
+    elif text in _cw_all("play_pause") or text == "play" or (
+            text.split()[0] in (_cw_all("play_pause") + ["play"])
+            and len(text.split()) > 1):
+        words_l = text.split()
+        if len(words_l) > 1:
+            app, _ = _parse_app(words_l, 1)
+            if app:
+                print(f"▶  Play {app}!")
+                _status(f"Play {app.title()}")
+                open_or_focus(app)
+                time.sleep(0.8)
+                keyboard.send("play/pause media")
+            else:
+                print("⏸  Toggling playback!")
+                _status("Play / Pause")
+                keyboard.send("play/pause media")
+        else:
+            print("⏸  Toggling playback!")
+            _status("Play / Pause")
+            keyboard.send("play/pause media")
     elif text in _cw_all("copy"):
         print("📋  Copy!")
         _status("Copy")
