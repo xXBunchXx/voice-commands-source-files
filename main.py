@@ -252,7 +252,7 @@ def _check_updates_ui(root, status_var):
         if messagebox.askyesno("Update available",
                                f"Version {latest} is available (you have {VERSION}).\n\nInstall now?",
                                parent=root):
-            _do_update(root, status_var)
+            _do_update(root, status_var, latest)
         else:
             status_var.set("○ Stopped")
     else:
