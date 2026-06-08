@@ -306,7 +306,7 @@ class AppManagerWidget(tk.Frame):
         # Rename row
         rename_row = tk.Frame(del_card, bg=CARD)
         rename_row.pack(fill="x", pady=(10, 4))
-        self._lbl(rename_row, "Rename voice name to:").pack(side="left")
+        self._lbl(rename_row, "Rename display name to:").pack(side="left")
         self.e_rename = self._inp(rename_row, width=20)
         self.e_rename.pack(side="left", padx=(8, 8))
         self._btn(rename_row, "Rename", self._on_rename).pack(side="left")
