@@ -95,6 +95,8 @@ DEFAULT_COMMAND_WORDS: dict[str, str] = {
     "maximise":       "maximise",
     "move":           "move",
     "merge":          "merge",
+    # Audio output switching
+    "switch_audio":   "change to",
     # Compound app commands
     "minimise_all":   "minimise all",
     "open_all":       "open all",
