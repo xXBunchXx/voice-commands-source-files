@@ -166,6 +166,57 @@ def _scan_registry() -> list[dict]:
     return results
 
 
+def _scan_start_menu() -> list[dict]:
+    """Scan the Windows Start Menu (.lnk shortcuts) and resolve their targets —
+    this gives the same nicely-named entries you'd see searching the Start Menu
+    (e.g. 'Visual Studio Code')."""
+    results, seen = [], set()
+    roots = []
+    for env in ("APPDATA", "PROGRAMDATA"):
+        base = os.getenv(env)
+        if base:
+            roots.append(pathlib.Path(base) / "Microsoft" / "Windows" /
+                         "Start Menu" / "Programs")
+    try:
+        import win32com.client
+        shell = win32com.client.Dispatch("WScript.Shell")
+    except Exception:
+        shell = None
+    _skip = ("uninstall", "setup", "readme", "help", "release notes",
+             "website", "homepage", "documentation", "license")
+    for root in roots:
+        if not root.is_dir():
+            continue
+        try:
+            lnks = list(root.rglob("*.lnk"))
+        except Exception:
+            continue
+        for lnk in lnks:
+            try:
+                display = lnk.stem
+                low = display.lower()
+                if any(s in low for s in _skip):
+                    continue
+                target = ""
+                if shell is not None:
+                    target = shell.CreateShortcut(str(lnk)).TargetPath
+                if not target or not target.lower().endswith(".exe"):
+                    continue
+                if not pathlib.Path(target).exists():
+                    continue
+                key = target.lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                results.append({"display": display,
+                                "name":    _to_voice_name(display),
+                                "path":    target,
+                                "proc":    pathlib.Path(target).name})
+            except Exception:
+                continue
+    return results
+
+
 # ── App Manager Widget ────────────────────────────────────────────────────────
 
 class AppManagerWidget(tk.Frame):
