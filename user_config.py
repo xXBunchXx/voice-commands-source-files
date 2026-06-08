@@ -444,6 +444,7 @@ def _schema_defaults() -> dict:
         "CONFIDENCE_THRESHOLD": 0.65,
         "COOLDOWN":             1.5,
         "RESPONSE_DELAY":       0.12,  # seconds a partial must hold before firing
+        "WORD_DELAYS":          {},    # {command_key: ms} bare-verb grace times
         "COMMAND_WORDS":        DEFAULT_COMMAND_WORDS.copy(),
         "VOLUME_STEPS":         DEFAULT_VOLUME_STEPS.copy(),
         "CONTEXT_COMMANDS":     {},   # empty = use all defaults
