@@ -202,6 +202,30 @@ def _try_context_command(text: str) -> bool:
     print(f"  '{text}' only works in: {contexts}  (active: {proc or 'unknown'})")
     return True
 
+
+def _try_specific_context(text: str) -> bool:
+    """Fire an app/group-SPECIFIC context command (context is not 'any') when the
+    foreground app matches.  This runs BEFORE the built-in commands so it can
+    override them — e.g. 'enter' does ctrl+enter inside Claude but the normal
+    Enter key everywhere else.  'any' commands never override (handled later)."""
+    if text not in _CONTEXT_COMMANDS:
+        return False
+    proc    = _get_active_proc()
+    targets = _CONTEXT_COMMANDS[text]
+    for context, action in targets.items():
+        if context == "any":
+            continue
+        if _proc_matches_context(proc, context):
+            try:
+                _execute_action(action)
+            except Exception as _ae:
+                print(f"⚠️  Action error ({text!r}): {_ae}")
+            preview = action if isinstance(action, str) else "macro"
+            print(f"🖱  {text}  [{context}]  → {preview}  (overrides default)")
+            _status(f"{text.title()}  [{context}]")
+            return True
+    return False
+
 # Window classes to exclude per app.
 # IME / Default IME are Windows system Input Method Editor windows —
 # every thread creates one; they are never the app's main UI.
