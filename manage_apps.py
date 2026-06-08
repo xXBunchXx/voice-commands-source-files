@@ -404,7 +404,7 @@ class AppManagerWidget(tk.Frame):
 
         self._lbl(add_card, "Display name  (shown in lists / logs)").grid(row=0, column=0, sticky="w")
         self._lbl(add_card, "Exe / path  (or steam:// URL)").grid(row=0, column=1, sticky="w", padx=(10,0))
-        self._lbl(add_card, "Process name  (e.g. notepad.exe)").grid(row=0, column=2, sticky="w", padx=(10,0))
+        self._lbl(add_card, "Process name  (auto from path)").grid(row=0, column=2, sticky="w", padx=(10,0))
 
         self.e_name = self._inp(add_card, 18)
         self.e_path = self._inp(add_card, 38)
@@ -412,6 +412,8 @@ class AppManagerWidget(tk.Frame):
         self.e_name.grid(row=1, column=0, sticky="ew", pady=(2, 0))
         self.e_path.grid(row=1, column=1, sticky="ew", padx=(10, 0), pady=(2, 0))
         self.e_proc.grid(row=1, column=2, sticky="ew", padx=(10, 0), pady=(2, 0))
+        # Auto-fill the process name from the path as it's typed/pasted.
+        self.e_path.bind("<KeyRelease>", lambda e: self._sync_proc_from_path())
 
         self._lbl(add_card, "Spoken name  (what you actually SAY to trigger it)",
                   fg=MUTED, font=("Segoe UI", 8)).grid(
