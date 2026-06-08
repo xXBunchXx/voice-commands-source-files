@@ -465,6 +465,29 @@ def snap_app(app_name: str | None, position: str) -> None:
     label = app_name or "current window"
     print(f"🗗  Snapped {label} to {position}!")
     _status(f"Moved {label} → {position}")
+
+
+def send_to_background(app_name: str | None = None) -> None:
+    """Push a window to the very bottom of the z-order (behind every other
+    window) without minimising it — it stays open, just out of the way."""
+    if app_name:
+        if app_name not in APPS:
+            print(f"  Don't know '{app_name}'")
+            return
+        hwnds = _windows_for_app(app_name)
+        hwnd  = _pick_window(hwnds, app_name) if hwnds else None
+        label = app_name
+    else:
+        hwnd  = win32gui.GetForegroundWindow()
+        label = "current window"
+    if not hwnd:
+        print(f"  Couldn't find a window for '{app_name or 'current'}'")
+        return
+    SWP_NOSIZE, SWP_NOMOVE, SWP_NOACTIVATE = 0x0001, 0x0002, 0x0010
+    win32gui.SetWindowPos(hwnd, win32con.HWND_BOTTOM, 0, 0, 0, 0,
+                          SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE)
+    print(f"🗗  Sent {label} to background!")
+    _status(f"{label.title()} → background")
 # ─────────────────────────────────────────────────────────────────────────
 
 # ── PROCESS CACHE ────────────────────────────────────────────────────────
