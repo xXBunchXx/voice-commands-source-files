@@ -230,8 +230,10 @@ class AppManagerWidget(tk.Frame):
         self._scan_visible   = []
         self._scan_vars      = []
         self._scan_name_vars = []
+        self._all_candidates = None   # combined searchable app list (None = loading)
         self._build_ui()
         self._reload()
+        self._load_candidates_bg()
 
     # ── Widget helpers ────────────────────────────────────────────────────────
 
