@@ -749,6 +749,118 @@ def merge_explorer_windows() -> None:
     print(f"🗂  Merged into {len(wins)} tabs!")
 
 
+# ── LAYOUTS ────────────────────────────────────────────────────────────────
+# A layout is a snapshot of which known apps are open, each window's position
+# and size, and whether it's minimised/maximised/normal.  Saved per number 1-9.
+
+def _app_for_proc(proc: str) -> "str | None":
+    """Reverse-lookup: the app display name whose PROC_NAMES pattern matches
+    *proc*, or None if the process isn't one of the user's configured apps."""
+    proc = (proc or "").lower()
+    if not proc:
+        return None
+    for app, pattern in PROC_NAMES.items():
+        if pattern and _proc_matches(proc, pattern):
+            return app
+    return None
+
+
+def save_layout(n: int) -> None:
+    """Snapshot every open window that belongs to a configured app into layout *n*."""
+    if time.monotonic() - _cache_built_at > _CACHE_TTL:
+        _refresh_pid_cache()
+    entries: list = []
+    seen_apps: dict = {}
+
+    def _cb(hwnd, _):
+        # Minimised windows are still "visible"; tray-hidden ones are not — skip those.
+        if not win32gui.IsWindowVisible(hwnd):
+            return
+        if not win32gui.GetWindowText(hwnd):
+            return
+        if win32gui.GetClassName(hwnd) in GLOBAL_EXCLUDE_CLASSES:
+            return
+        if not _is_taskbar_window(hwnd):
+            return
+        try:
+            _, pid = win32process.GetWindowThreadProcessId(hwnd)
+        except Exception:
+            return
+        app = _app_for_proc(_pid_name_cache.get(pid, ""))
+        if not app:
+            return
+        try:
+            placement = win32gui.GetWindowPlacement(hwnd)
+        except Exception:
+            return
+        entries.append({
+            "app":  app,
+            "show": int(placement[1]),          # SW_SHOWNORMAL / MINIMIZED / MAXIMIZED
+            "rect": list(placement[4]),         # (left, top, right, bottom) when normal
+        })
+        seen_apps[app] = seen_apps.get(app, 0) + 1
+
+    win32gui.EnumWindows(_cb, None)
+    user_config.set_layout(n, entries)
+    apps = ", ".join(sorted(seen_apps)) or "nothing"
+    print(f"💾  Saved layout {n}  ({len(entries)} window(s): {apps})")
+    _status(f"Saved layout {n}")
+
+
+def restore_layout(n: int) -> None:
+    """Restore layout *n*: open any missing apps, then position/size every window
+    and apply its minimised/maximised/normal state.  Runs in a background thread
+    so launching apps doesn't stall the voice engine."""
+    entries = user_config.get_layout(n)
+    if not entries:
+        print(f"  Layout {n} is empty — say 'save layout {n}' first.")
+        _status(f"Layout {n} is empty")
+        return
+
+    print(f"📂  Restoring layout {n}  ({len(entries)} window(s))…")
+    _status(f"Restoring layout {n}")
+
+    def _worker():
+        # 1. Launch any app in the layout that isn't running yet.
+        needed = []
+        for e in entries:
+            if e["app"] not in needed:
+                needed.append(e["app"])
+        launched = False
+        for app in needed:
+            if app in APPS and not _windows_for_app(app):
+                try:
+                    open_or_focus(app)
+                    launched = True
+                except Exception as ex:
+                    print(f"  couldn't open {app}: {ex}")
+        if launched:
+            time.sleep(2.5)   # give freshly launched apps time to create windows
+            _refresh_pid_cache()
+
+        # 2. Position each window; track used hwnds so multiple windows of the
+        #    same app go to different saved slots.
+        used: set = set()
+        placed = 0
+        for e in entries:
+            hwnds = _windows_for_app(e["app"])
+            target = next((h for h in hwnds if h not in used), None)
+            if target is None:
+                continue
+            used.add(target)
+            try:
+                rect = tuple(e["rect"])
+                win32gui.SetWindowPlacement(
+                    target, (0, int(e["show"]), (-1, -1), (-1, -1), rect))
+                placed += 1
+            except Exception as ex:
+                print(f"  couldn't place {e['app']}: {ex}")
+        print(f"📂  Layout {n} restored  ({placed}/{len(entries)} window(s) placed)")
+        _status(f"Layout {n} restored")
+
+    _threading.Thread(target=_worker, daemon=True).start()
+
+
 def minimise_app(app_name: str | None = None) -> None:
     if app_name:
         if app_name not in APPS:
