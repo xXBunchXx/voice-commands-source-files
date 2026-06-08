@@ -1256,7 +1256,7 @@ def run(stop_event: _threading.Event | None = None) -> bool:
     """Start the voice engine.  Returns True if a restart was requested."""
     global APPS, PROC_NAMES, MODEL_PATH, _stop_event, _restart_requested
     global CONFIDENCE_THRESHOLD, COOLDOWN, _COMMAND_WORDS, _VOLUME_STEPS, _CONTEXT_COMMANDS
-    global _SPOKEN_NAMES, _SPOKEN_TO_DISPLAY, PARTIAL_STABLE_SECS
+    global _SPOKEN_NAMES, _SPOKEN_TO_DISPLAY, PARTIAL_STABLE_SECS, _WORD_DELAYS
     _cfg                 = user_config.load()
     MODEL_PATH           = user_config.get_model_path()
     APPS                 = _cfg.get("APPS", APPS)
@@ -1264,6 +1264,7 @@ def run(stop_event: _threading.Event | None = None) -> bool:
     CONFIDENCE_THRESHOLD = user_config.get_confidence_threshold()
     COOLDOWN             = user_config.get_cooldown()
     PARTIAL_STABLE_SECS  = user_config.get_response_delay()
+    _WORD_DELAYS         = user_config.get_word_delays()
     _COMMAND_WORDS       = user_config.get_command_words()
     _VOLUME_STEPS        = user_config.get_volume_steps()
     _CONTEXT_COMMANDS    = user_config.get_context_commands()
