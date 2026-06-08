@@ -1137,6 +1137,43 @@ _restart_requested = False
 _SMALL_MODEL_NAME = "vosk-model-small-en-us-0.15"
 
 
+# Cached model for the "Listen" feature so repeated uses don't reload it.
+_listen_model = None
+
+def listen_once(seconds: float = 2.0) -> str:
+    """Record *seconds* of audio with an OPEN-vocabulary recogniser (no grammar
+    restriction) and return what was heard, lowercased.
+
+    Used by the App Manager's "Listen" button to discover how Vosk actually
+    hears a spoken app name, so the user can use that as the spoken name.
+    Opens its own short-lived audio stream; safe to call from the GUI.
+    """
+    global _listen_model
+    if _listen_model is None:
+        _listen_model = Model(user_config.get_model_path())
+    rec = KaldiRecognizer(_listen_model, SAMPLE_RATE)
+    rec.SetWords(True)
+
+    pa = pyaudio.PyAudio()
+    stream = pa.open(format=pyaudio.paInt16, channels=1, rate=SAMPLE_RATE,
+                     input=True, frames_per_buffer=FRAMES_PER_BUFFER)
+    try:
+        stream.start_stream()
+        needed = int(SAMPLE_RATE * max(0.2, seconds))
+        read = 0
+        while read < needed:
+            data = stream.read(FRAMES_PER_BUFFER, exception_on_overflow=False)
+            rec.AcceptWaveform(data)
+            read += FRAMES_PER_BUFFER
+    finally:
+        try:
+            stream.stop_stream(); stream.close()
+        except Exception:
+            pass
+        pa.terminate()
+    return json.loads(rec.FinalResult()).get("text", "").strip().lower()
+
+
 def _dual_model_filter(main_text: str, ref_text: str) -> tuple[str, str | None]:
     """Use the small model's output to detect a hallucinated leading word in
     the main model's result.
