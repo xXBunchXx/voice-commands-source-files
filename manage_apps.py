@@ -217,6 +217,46 @@ def _scan_start_menu() -> list[dict]:
     return results
 
 
+def _scan_apps_folder() -> list[dict]:
+    """Enumerate the Windows 'Apps' shell folder — the exact list Start's app
+    search uses.  Covers Win32 apps, UWP/Store apps, and launcher-registered
+    apps (e.g. Unreal Engine, games) that have no plain .exe shortcut.
+
+    These are launched the same way Start launches them:
+    `explorer.exe shell:AppsFolder\\<AppID>`.  Window management (close/focus)
+    isn't always possible for these, but opening always works."""
+    results = []
+    try:
+        import win32com.client
+        shell = win32com.client.Dispatch("Shell.Application")
+        ns = shell.NameSpace("shell:AppsFolder")
+        if ns is None:
+            return results
+        items = ns.Items()
+        _skip = ("uninstall", "setup", "readme", "release notes",
+                 "documentation", "license")
+        for i in range(items.Count):
+            try:
+                item   = items.Item(i)
+                name   = (item.Name or "").strip()
+                app_id = (item.Path or "").strip()
+                if not name or not app_id:
+                    continue
+                if any(s in name.lower() for s in _skip):
+                    continue
+                results.append({
+                    "display": name,
+                    "name":    _to_voice_name(name),
+                    "path":    f"shell:AppsFolder\\{app_id}",
+                    "proc":    "",   # unknown for shell apps; filled by .lnk/registry merge
+                })
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return results
+
+
 # ── App Manager Widget ────────────────────────────────────────────────────────
 
 class AppManagerWidget(tk.Frame):
