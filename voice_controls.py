@@ -1294,6 +1294,14 @@ def _build_cmd_timing() -> dict:
         if ms > 0:
             for w in _cw_all(key):
                 out[w] = ms / 1000.0
+    # Per-custom-command speed overrides (Custom Commands tab) — keyed by phrase.
+    for phrase, ms in (_CONTEXT_DELAYS or {}).items():
+        try:
+            ms = int(ms)
+        except (TypeError, ValueError):
+            continue
+        if ms > 0:
+            out[phrase.strip().lower()] = ms / 1000.0
     return out
 
 
