@@ -307,6 +307,8 @@ class AppManagerWidget(tk.Frame):
 
         self.e_spoken = self._inp(add_card, 30)
         self.e_spoken.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(2, 0))
+        self._make_listen_widget(add_card, self.e_spoken).grid(
+            row=3, column=2, sticky="w", padx=(10, 0), pady=(2, 0))
 
         self._btn(add_card, "Add Entry", self._on_add).grid(
             row=4, column=0, columnspan=3, pady=(10, 0), sticky="e")
