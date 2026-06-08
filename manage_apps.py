@@ -1065,7 +1065,7 @@ class AppManagerWidget(tk.Frame):
     def _on_add(self):
         name   = self.e_name.get().strip().lower()
         path   = self.e_path.get().strip()
-        proc   = self.e_proc.get().strip()
+        proc   = self.e_proc.get().strip() or self._auto_proc_from_path(path)
         spoken = self.e_spoken.get().strip().lower()
         # Process name is optional for launch-only apps (e.g. Start "Apps" /
         # Store / launcher-registered apps) which can be opened but not
