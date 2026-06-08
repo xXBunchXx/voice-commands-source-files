@@ -44,17 +44,40 @@ echo   1. Overhaul  ^(%CUR_VER% -^> %VER_A%^)  -- huge milestone release
 echo   2. Important ^(%CUR_VER% -^> %VER_B%^)  -- fairly significant update
 echo   3. Stable    ^(%CUR_VER% -^> %VER_C%^)  -- tested and confirmed stable
 echo   4. Build     ^(%CUR_VER% -^> %VER_D%^)  -- new build, may be buggy
+echo   5. Manual    ^(%CUR_VER% -^> you type it^)  -- set any version, e.g. revert
 echo   0. RESET     ^(%CUR_VER% -^> 1.0.0.0^)  -- wipes ALL user save files on next launch
 echo.
-set /p UPDATE_TYPE="Enter 0, 1, 2, 3, or 4: "
+set /p UPDATE_TYPE="Enter 0, 1, 2, 3, 4, or 5: "
 
 if "%UPDATE_TYPE%"=="0" goto do_reset
 if "%UPDATE_TYPE%"=="1" goto do_a
 if "%UPDATE_TYPE%"=="2" goto do_b
 if "%UPDATE_TYPE%"=="3" goto do_c
 if "%UPDATE_TYPE%"=="4" goto do_d
+if "%UPDATE_TYPE%"=="5" goto do_manual
 echo Invalid choice, defaulting to Build.
 goto do_a
+
+:do_manual
+echo.
+echo Enter the exact version you want, as four numbers separated by dots.
+echo Example: 1.0.6.0
+echo.
+set /p MAN_VER="New version: "
+:: Validate: must be N.N.N.N (four integer parts)
+python -c "import sys,re;v='%MAN_VER%'.strip();sys.exit(0 if re.fullmatch(r'\d+\.\d+\.\d+\.\d+', v) else 1)"
+if errorlevel 1 (
+    echo.
+    echo  Invalid version "%MAN_VER%" -- it must be four numbers like 1.0.6.0
+    pause
+    exit /b 1
+)
+set SKIP_RELEASE=1
+set BUILD_TYPE=Manual
+python -c "open('version.txt','w',encoding='utf-8').write('%MAN_VER%'.strip())"
+call :patch_py
+echo   Manual: %CUR_VER% -^> %MAN_VER%
+goto build
 
 :do_reset
 echo.
