@@ -383,10 +383,11 @@ class AppManagerWidget(tk.Frame):
 
         def _on_wheel(e):
             canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
-        self._main_canvas = canvas
-        canvas.bind_all  # noqa  (kept simple — bind on enter/leave below)
-        canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _on_wheel))
-        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
+        self._main_canvas  = canvas
+        self._wheel_handler = _on_wheel
+        canvas.bind("<MouseWheel>", _on_wheel)
+        page.bind("<MouseWheel>", _on_wheel)
+        self._main_inner = page   # bound recursively at the end of this method
 
         tk.Label(page, text=f"Config: {user_config.config_path()}",
                  bg=BG, fg=MUTED, font=("Segoe UI", 8), anchor="w").pack(
