@@ -222,15 +222,21 @@ class AppManagerWidget(tk.Frame):
             secs = float(dur_var.get())
         except Exception:
             secs = 2.0
-        btn.config(state="disabled", text="Listening…")
-        self._flash(f"Listening for {secs:.1f}s — say the name now…", "#fbbf24")
+        btn.config(state="disabled", text="Preparing…")
+        self._flash("Preparing microphone…", "#fbbf24")
         self.update_idletasks()
+
+        def _on_start():
+            def _u():
+                btn.config(text="Listening…")
+                self._flash(f"Say the name now…  ({secs:.1f}s)", "#fbbf24")
+            self.after(0, _u)
 
         def _work():
             text, err = "", ""
             try:
                 import voice_controls
-                text = voice_controls.listen_once(secs)
+                text = voice_controls.listen_once(secs, on_start=_on_start)
             except Exception as e:
                 err = str(e)
 
