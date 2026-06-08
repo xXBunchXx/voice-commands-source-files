@@ -306,6 +306,19 @@ def set_response_delay(value: float) -> None:
     data["RESPONSE_DELAY"] = round(max(0.04, min(1.0, value)), 2)
     save(data)
 
+def get_layouts() -> dict:
+    """All saved window layouts, keyed by number string: {"1": [entries...], ...}."""
+    return load().get("LAYOUTS", {})
+
+def get_layout(n) -> list:
+    return get_layouts().get(str(n), [])
+
+def set_layout(n, entries) -> None:
+    data = load()
+    layouts = data.setdefault("LAYOUTS", {})
+    layouts[str(n)] = entries
+    save(data)
+
 def get_word_delays() -> dict:
     """Per-command grace times in milliseconds for bare action verbs.
 
