@@ -79,6 +79,21 @@ def _status(msg: str) -> None:
             pass
 
 
+# ── Self-window control ────────────────────────────────────────────────────
+# "echo" is Echo's own window.  Managing it with raw win32 calls from the engine
+# thread leaves Tk's event loop out of sync, so the GUI freezes until clicked.
+# main.py registers a callback that does iconify/deiconify on the Tk thread.
+_self_window_cb = None     # callable(action) where action in {"minimise", "restore"}
+_SELF_EXE = os.path.basename(sys.executable).lower()   # "echo.exe" when frozen
+
+def _is_self_app(app_name: str | None) -> bool:
+    """True if *app_name* refers to Echo's own window (this process)."""
+    if not app_name:
+        return False
+    proc = (PROC_NAMES.get(app_name, "") or "").lower()
+    return bool(proc) and proc == _SELF_EXE
+
+
 def _get_active_proc() -> str:
     """Return the exe name (lowercase) of the current foreground window's process."""
     hwnd = win32gui.GetForegroundWindow()
