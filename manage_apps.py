@@ -238,7 +238,7 @@ class AppManagerWidget(tk.Frame):
         add_card = tk.Frame(add_sec, bg=CARD, padx=10, pady=10)
         add_card.pack(fill="x")
 
-        self._lbl(add_card, "Voice command name").grid(row=0, column=0, sticky="w")
+        self._lbl(add_card, "Display name  (shown in lists / logs)").grid(row=0, column=0, sticky="w")
         self._lbl(add_card, "Exe / path  (or steam:// URL)").grid(row=0, column=1, sticky="w", padx=(10,0))
         self._lbl(add_card, "Process name  (e.g. notepad.exe)").grid(row=0, column=2, sticky="w", padx=(10,0))
 
