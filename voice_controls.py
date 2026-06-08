@@ -1245,6 +1245,16 @@ def handle_command(text: str) -> bool:
     last_command = text
     last_command_time = now
 
+    # ── Layouts: "save layout three" / "open layout three" ─────────────────
+    if len(words) == 3 and words[1] == "layout" and words[2] in _NUMBER_WORDS:
+        num = _NUMBER_WORDS[words[2]]
+        if words[0] in _cw_all("save"):
+            save_layout(num)
+            return False
+        if words[0] in _cw_all("open"):
+            restore_layout(num)
+            return False
+
     if text in _cw_all("skip"):
         print("⏭  Skipping track!")
         _status("Skipping track")
