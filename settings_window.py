@@ -153,7 +153,6 @@ class SettingsWidget(tk.Frame):
         nb.pack(fill="both", expand=True, padx=12, pady=12)
 
         self._tab_engine(nb)
-        self._tab_volume(nb)
         self._tab_commands(nb)
         self._tab_context(nb)
         self._tab_groups(nb)
