@@ -474,6 +474,13 @@ class SettingsWidget(tk.Frame):
         cmds   = user_config.get_context_commands()
         groups = user_config.get_custom_groups()
 
+        # Map process names (e.g. "firefox.exe") back to their app display name
+        # so the list reads "firefox  (app)" instead of "firefox.exe  (app)".
+        proc_to_display = {}
+        for disp, pr in user_config.get_proc_names().items():
+            if pr:
+                proc_to_display[pr.lower()] = disp
+
         # Build display groups: known contexts, custom groups, then individual procs
         group_order: dict[str, list] = {c: [] for c in _KNOWN_CONTEXTS}
         for gname in sorted(groups.keys()):
