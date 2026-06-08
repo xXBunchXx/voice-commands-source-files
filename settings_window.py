@@ -1461,6 +1461,7 @@ class SettingsWidget(tk.Frame):
                            int(user_config.get_confidence_threshold() * 100))
             self._on_conf_change()
             self._set_spin(self._cooldown_spin, user_config.get_cooldown())
+            self._set_spin(self._response_spin, int(round(user_config.get_response_delay() * 1000)))
             self._set_spin(self._delay_spin, user_config.get_close_delay())
             v_steps = user_config.get_volume_steps()
             for word, sp in self._vol_spins.items():
