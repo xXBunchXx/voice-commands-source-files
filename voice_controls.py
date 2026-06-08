@@ -1093,26 +1093,14 @@ def handle_command(text: str) -> bool:
                 keyboard.send("windows+d")
                 print("🗕  Minimised all windows!")
                 _status("Minimise all windows")
-            elif words[1] == "current":
-                minimise_app()                       # focused window
             else:
                 app, _ = _parse_app(words, 1)
-                if app:
-                    minimise_app(app)
-                else:
-                    print(f"  Don't know '{' '.join(words[1:])}'")
-        # bare "minimise" does nothing — say "minimise current" for the focused window
+                minimise_app(app) if app else minimise_app()
+        else:
+            minimise_app()
     elif words[0] in _cw_all("maximise"):
-        if len(words) > 1:
-            if words[1] == "current":
-                snap_app(None, "fullscreen")         # focused window
-            else:
-                app, _ = _parse_app(words, 1)
-                if app:
-                    snap_app(app, "fullscreen")
-                else:
-                    print(f"  Don't know '{' '.join(words[1:])}'")
-        # bare "maximise" does nothing — say "maximise current" for the focused window
+        app, _ = _parse_app(words, 1) if len(words) > 1 else (None, [])
+        snap_app(app, "fullscreen")
     elif words[0] in _cw_all("merge"):
         merge_explorer_windows()
     elif words[0] in _cw_all("close") and len(words) > 1 and words[1] == "current":
