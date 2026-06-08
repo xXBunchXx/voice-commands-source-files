@@ -995,6 +995,23 @@ def _early_fire_set(grammar_json: str) -> set:
     return phrases
 
 
+def _build_bare_delays() -> dict:
+    """Map a bare action-verb phrase -> required stable time in SECONDS, from the
+    user's per-command grace settings.  Only verbs with a configured delay > 0
+    are included; those bare verbs then fire early after their own grace time
+    (instead of waiting for full end-of-speech)."""
+    out = {}
+    for key, ms in (_WORD_DELAYS or {}).items():
+        try:
+            ms = int(ms)
+        except (TypeError, ValueError):
+            continue
+        if ms > 0:
+            for w in _cw_all(key):
+                out[w] = ms / 1000.0
+    return out
+
+
 def average_confidence(result: dict) -> float:
     words = result.get("result", [])
     if not words:
