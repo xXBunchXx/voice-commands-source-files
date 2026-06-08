@@ -331,12 +331,9 @@ class SettingsWidget(tk.Frame):
 
     # ── Volume tab ────────────────────────────────────────────────────────────
 
-    def _tab_volume(self, nb):
-        frame = tk.Frame(nb, bg=BG)
-        nb.add(frame, text="🔊  Volume")
-
-        sec = _section(frame, "Volume Step Words")
-        sec.pack(fill="x", padx=2, pady=(8, 0))
+    def _build_volume_section(self, parent):
+        sec = _section(parent, "Volume Step Words")
+        sec.pack(fill="x", padx=2, pady=(12, 0))
         card = _card(sec); card.pack(fill="x")
 
         _lbl(card, 'Say  "volume up <word>"  or  "volume down <word>"  to change by that amount.',
@@ -351,8 +348,6 @@ class SettingsWidget(tk.Frame):
             sp.pack(side="left", padx=(4, 0))
             _lbl(row, "%", fg=MUTED).pack(side="left", padx=(4, 0))
             self._vol_spins[word] = sp
-
-        self._make_save_btn(frame, self._save_volume)
 
     def _save_volume(self):
         try:
