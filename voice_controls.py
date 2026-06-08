@@ -288,6 +288,12 @@ SNAP_POSITIONS: set[str] = {
     "top left", "top right",
     "bottom left", "bottom right",
 }
+
+# Spoken number words → digit, used by the layouts feature (layouts 1-9).
+_NUMBER_WORDS: dict[str, int] = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9,
+}
 # ─────────────────────────────────────────────────────────────────────────
 
 # ── VOLUME CONTROL ───────────────────────────────────────────────────────
