@@ -60,6 +60,7 @@ _VOLUME_STEPS:     dict[str, int]             = user_config.DEFAULT_VOLUME_STEPS
 _CONTEXT_COMMANDS:   dict[str, dict[str, str]]  = user_config.DEFAULT_CONTEXT_COMMANDS.copy()
 _SPOKEN_NAMES:       dict[str, str]             = {}   # display_name → spoken_name
 _SPOKEN_TO_DISPLAY:  dict[str, str]             = {}   # spoken_name  → display_name
+_WORD_DELAYS:        dict[str, int]             = {}   # command_key  → grace ms for bare verb
 
 
 def _spoken(app: str) -> str:
