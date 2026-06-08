@@ -531,10 +531,45 @@ def _pick_window(hwnds: list[int], app_name: str) -> int:
 
 
 def _set_foreground(hwnd: int) -> None:
+    """Bring a window to the foreground, restoring it first if minimised.
+
+    Windows blocks SetForegroundWindow when the call comes from a process that
+    doesn't own the current foreground window (its "focus-stealing prevention").
+    A plain call therefore silently fails for minimised windows.  We temporarily
+    AttachThreadInput to the foreground (and target) threads, which makes Windows
+    treat us as part of that input queue and lets the focus call go through.
+    """
     try:
+        # Restore from minimised, otherwise just ensure it's shown
+        if win32gui.IsIconic(hwnd):
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+        else:
+            win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
+
+        our_tid    = win32api.GetCurrentThreadId()
+        target_tid = win32process.GetWindowThreadProcessId(hwnd)[0]
+        fg_hwnd    = win32gui.GetForegroundWindow()
+        fg_tid     = win32process.GetWindowThreadProcessId(fg_hwnd)[0] if fg_hwnd else 0
+
+        # The alt-key tap satisfies Windows' "user recently provided input" rule
         win32api.keybd_event(win32con.VK_MENU, 0, 0, 0)
         win32api.keybd_event(win32con.VK_MENU, 0, win32con.KEYEVENTF_KEYUP, 0)
-        win32gui.SetForegroundWindow(hwnd)
+
+        attached = set()
+        try:
+            for tid in (fg_tid, target_tid):
+                if tid and tid != our_tid and tid not in attached:
+                    if ctypes.windll.user32.AttachThreadInput(our_tid, tid, True):
+                        attached.add(tid)
+            win32gui.BringWindowToTop(hwnd)
+            win32gui.SetForegroundWindow(hwnd)
+            try:
+                win32gui.SetActiveWindow(hwnd)
+            except Exception:
+                pass
+        finally:
+            for tid in attached:
+                ctypes.windll.user32.AttachThreadInput(our_tid, tid, False)
     except Exception as e:
         print(f"  Warning: couldn't bring window to foreground ({e})")
 
