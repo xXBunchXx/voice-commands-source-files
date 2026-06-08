@@ -308,6 +308,18 @@ def set_response_delay(value: float) -> None:
     data["RESPONSE_DELAY"] = round(max(0.04, min(1.0, value)), 2)
     save(data)
 
+def get_audio_devices() -> dict:
+    """Spoken-name -> {"id": device_id, "name": friendly_name} for audio switching.
+    e.g. {"headphones": {"id": "{0.0.0...}", "name": "Headphones (Realtek)"}}."""
+    return load().get("AUDIO_DEVICES", {})
+
+def set_audio_devices(devices: dict) -> None:
+    data = load()
+    data["AUDIO_DEVICES"] = {k.strip().lower(): v
+                             for k, v in devices.items() if k and k.strip()}
+    save(data)
+
+
 def get_layouts() -> dict:
     """All saved window layouts, keyed by number string: {"1": [entries...], ...}."""
     return load().get("LAYOUTS", {})
