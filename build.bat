@@ -176,7 +176,7 @@ if exist "'+$n)" del /f /q "'+$n)"
 git rm --cached -r dist/ >nul 2>&1
 git rm --cached Echo.zip >nul 2>&1
 :: Stage all source files
-git add version.txt main.py user_config.py voice_controls.py manage_apps.py settings_window.py voice_templates.py .gitignore build.bat icon.png
+git add version.txt main.py user_config.py voice_controls.py manage_apps.py settings_window.py voice_templates.py audio_devices.py .gitignore build.bat icon.png
 git commit --allow-empty -m "%BUILD_TYPE% v%NEW_VER%"
 git push
 if errorlevel 1 (
