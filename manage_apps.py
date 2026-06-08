@@ -674,7 +674,7 @@ class AppManagerWidget(tk.Frame):
         if conflicts:
             names = ", ".join(f'"{n}"' for n in conflicts)
             if not messagebox.askyesno("Overwrite?",
-                    f"These voice names already exist: {names}\n\nOverwrite them?",
+                    f"These display names already exist: {names}\n\nOverwrite them?",
                     parent=self.winfo_toplevel()):
                 return
         for r, name in selected:
