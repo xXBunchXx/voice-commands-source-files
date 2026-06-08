@@ -1110,6 +1110,11 @@ def build_grammar(active_proc: str = "") -> str:
         for ow in _cw_all("open"):
             words.append(f"{ow} layout {nw}")
 
+    # Audio output switching — "change to headphones"
+    for cw in _cw_all("switch_audio"):
+        for dev_name in _AUDIO_DEVICES:
+            words.append(f"{cw} {dev_name}")
+
     # Volume
     for step in _VOLUME_STEPS:
         words.append(f"volume up {step}")
