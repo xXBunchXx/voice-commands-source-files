@@ -386,7 +386,7 @@ class AppManagerWidget(tk.Frame):
         se.pack(fill="x", pady=(6, 4))
         self._search_var.trace_add("write", lambda *a: self._refresh_search_results())
         self._search_results = tk.Frame(find_card, bg=CARD)
-        self._search_results.pack(fill="x")
+        self._results_packed = False   # results frame is only packed when it has content
 
         # Quick-add row
         quick = tk.Frame(page, bg=BG)
