@@ -1243,6 +1243,11 @@ def run(stop_event: _threading.Event | None = None) -> bool:
 
     _threading.Thread(target=_grammar_watcher, daemon=True).start()
 
+    # ── Low-latency partial tracking ──────────────────────────────────────
+    _early_set     = _early_fire_set(grammar)   # complete commands we can fire early
+    _partial_text  = ""                          # last partial seen
+    _partial_since = 0.0                         # when it last changed
+
     try:
         while not stop_event.is_set():
             # Apply a pending grammar change on THIS thread (Vosk is single-thread).
@@ -1256,6 +1261,8 @@ def run(stop_event: _threading.Event | None = None) -> bool:
                     if rec_ref is not None and model_ref is not None:
                         rec_ref = KaldiRecognizer(model_ref, SAMPLE_RATE, new_grammar)
                         _ref_last_text = ""
+                    _early_set    = _early_fire_set(new_grammar)
+                    _partial_text = ""
                     print(f"  ↻  Grammar updated for '{proc or 'unknown'}'")
                 except Exception as _ge:
                     print(f"  Grammar update failed: {_ge}")
