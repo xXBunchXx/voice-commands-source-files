@@ -1525,7 +1525,12 @@ def run(stop_event: _threading.Event | None = None) -> bool:
                     if _is_null_bare(partial):
                         required = None              # never fire a bare prefix-verb
                     elif partial in _early_set:
-                        required = PARTIAL_STABLE_SECS
+                        # App-name commands settle a touch slower so the decoder
+                        # doesn't fire its first (possibly wrong) app guess.
+                        if _phrase_has_app(partial, _app_forms):
+                            required = PARTIAL_STABLE_SECS + _APP_SETTLE_EXTRA
+                        else:
+                            required = PARTIAL_STABLE_SECS
                     elif partial in _bare_delays:
                         required = _bare_delays[partial]
                     else:
