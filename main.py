@@ -282,6 +282,21 @@ def _stop_engine(status_var, b_start, b_stop):
     _ui_stopped(status_var, b_start, b_stop)
 
 
+def _restart_engine_ui(root, status_var, b_start, b_stop):
+    """Stop the engine (if running) and start it again once it has fully exited."""
+    th = _engine_thread
+    if th and th.is_alive():
+        status_var.set("↻ Restarting…")
+        _stop_event.set()
+
+        def _wait_then_start():
+            th.join(timeout=8)
+            root.after(0, lambda: _start_engine(root, status_var, b_start, b_stop))
+        threading.Thread(target=_wait_then_start, daemon=True).start()
+    else:
+        _start_engine(root, status_var, b_start, b_stop)
+
+
 # ── Update check UI ────────────────────────────────────────────────────────────
 
 def _check_updates_ui(root, status_var):
