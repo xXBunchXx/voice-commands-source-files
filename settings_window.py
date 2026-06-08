@@ -1186,17 +1186,19 @@ class SettingsWidget(tk.Frame):
         frame = tk.Frame(nb, bg=BG)
         nb.add(frame, text="🔊  Audio")
 
-        top = tk.Frame(frame, bg=BG)
-        top.pack(fill="x", padx=4, pady=(8, 4))
+        sec = _section(frame, "Output Devices")
+        sec.pack(fill="x", padx=2, pady=(8, 0))
+        top = tk.Frame(sec, bg=BG)
+        top.pack(fill="x", pady=(0, 4))
         _lbl(top,
              "Give a spoken name to each output device you want to switch to, then say "
-             "\"change to <name>\" to make it the default.\n"
-             "Leave a name blank to ignore that device.",
-             fg=MUTED, font=("Segoe UI", 8), justify="left").pack(side="left")
-        _btn(top, "↻  Refresh devices", self._reload_audio_list).pack(side="right")
+             "\"change to <name>\" to make it the default.  Leave a name blank to ignore it.",
+             fg=MUTED, font=("Segoe UI", 8), justify="left", wraplength=520).pack(side="left")
+        _btn(top, "↻  Refresh", self._reload_audio_list).pack(side="right")
 
-        list_outer = tk.Frame(frame, bg=CARD)
-        list_outer.pack(fill="both", expand=True, padx=4, pady=(4, 8))
+        list_outer = tk.Frame(frame, bg=CARD, height=200)
+        list_outer.pack(fill="x", padx=2, pady=(2, 0))
+        list_outer.pack_propagate(False)
         self._audio_canvas = tk.Canvas(list_outer, bg=CARD, highlightthickness=0)
         sb = ttk.Scrollbar(list_outer, orient="vertical", command=self._audio_canvas.yview)
         self._audio_canvas.configure(yscrollcommand=sb.set)
@@ -1210,9 +1212,17 @@ class SettingsWidget(tk.Frame):
         self._audio_canvas.bind("<Configure>",
                                 lambda e: self._audio_canvas.itemconfig(_awin, width=e.width))
 
-        self._make_save_btn(frame, self._save_audio)
+        # Volume controls live here too (audio-related).
+        self._build_volume_section(frame)
+
+        self._make_save_btn(frame, self._save_audio_tab)
         self._audio_name_vars = {}   # device_id -> (StringVar, friendly_name)
         self._reload_audio_list()
+
+    def _save_audio_tab(self):
+        self._save_audio()
+        self._save_volume()
+        self._flash("✓  Audio settings saved — restart engine to apply.")
 
     def _reload_audio_list(self):
         for w in self._audio_inner.winfo_children():
