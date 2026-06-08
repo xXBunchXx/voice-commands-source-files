@@ -590,7 +590,7 @@ class AppManagerWidget(tk.Frame):
         else:
             nr = tk.Frame(info, bg=CARD)
             nr.pack(anchor="w", fill="x")
-            tk.Label(nr, text="  voice name:", bg=CARD, fg=GRN,
+            tk.Label(nr, text="  display name:", bg=CARD, fg=GRN,
                      font=("Segoe UI", 8)).pack(side="left")
             tk.Entry(nr, textvariable=name_var, width=20, bg=ENTRY_BG, fg=FG,
                      insertbackground=FG, relief="flat",
