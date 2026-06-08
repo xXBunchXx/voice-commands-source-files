@@ -103,17 +103,39 @@ def _urlopen(url: str, timeout: int = 10):
 
 # ── Update helpers ─────────────────────────────────────────────────────────────
 
+def _version_tuple(v: str) -> tuple:
+    return tuple(int(x) for x in v.split("."))
+
+
 def _fetch_latest_version() -> str | None:
+    """Return the highest *published release* version whose last digit is 0.
+
+    Releases are only created for stable builds (A.B.C.0).  Development builds
+    (last digit != 0) are never published as releases and can't be downloaded,
+    so we ignore them entirely — we query GitHub's Releases API and pick the
+    highest tag ending in .0, rather than reading the repo's version.txt (which
+    is just whatever was last committed and may be a dev build)."""
     try:
-        with _urlopen(GITHUB_RAW + "version.txt") as r:
-            return r.read().decode().strip()
+        with _urlopen(GITHUB_API_RELEASES) as r:
+            data = json.loads(r.read().decode())
     except Exception as e:
         _log_queue.put(f"Update check error: {e}\n")
         return None
 
-
-def _version_tuple(v: str) -> tuple:
-    return tuple(int(x) for x in v.split("."))
+    best, best_t = None, None
+    for rel in (data if isinstance(data, list) else []):
+        if rel.get("draft"):
+            continue
+        tag = (rel.get("tag_name") or "").lstrip("vV").strip()
+        try:
+            t = _version_tuple(tag)
+        except Exception:
+            continue
+        if len(t) < 4 or t[-1] != 0:
+            continue   # only stable, downloadable .0 releases count
+        if best_t is None or t > best_t:
+            best, best_t = tag, t
+    return best
 
 
 def _do_update(root: tk.Tk, status_var: tk.StringVar, latest_version: str) -> None:
