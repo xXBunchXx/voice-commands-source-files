@@ -1083,6 +1083,13 @@ def build_grammar(active_proc: str = "") -> str:
         for app in APPS:
             words.append(f"{mgw} {_spoken(app)}")
 
+    # Layouts — "save layout three" / "open layout three"  (1-9)
+    for nw in _NUMBER_WORDS:
+        for sw in _cw_all("save"):
+            words.append(f"{sw} layout {nw}")
+        for ow in _cw_all("open"):
+            words.append(f"{ow} layout {nw}")
+
     # Volume
     for step in _VOLUME_STEPS:
         words.append(f"volume up {step}")
