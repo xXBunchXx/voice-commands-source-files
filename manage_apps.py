@@ -249,11 +249,11 @@ class AppManagerWidget(tk.Frame):
         self.e_path.grid(row=1, column=1, sticky="ew", padx=(10, 0), pady=(2, 0))
         self.e_proc.grid(row=1, column=2, sticky="ew", padx=(10, 0), pady=(2, 0))
 
-        self._lbl(add_card, "Spoken name  (optional — how you say the app name)",
+        self._lbl(add_card, "Spoken name  (what you actually SAY to trigger it)",
                   fg=MUTED, font=("Segoe UI", 8)).grid(
             row=2, column=0, columnspan=2, sticky="w", pady=(8, 0))
         self._lbl(add_card,
-                  'e.g. type "ace sprite" for display name "aseprite"',
+                  'e.g. say "ace sprite" for display name "aseprite"  (blank = use display name)',
                   fg=MUTED, font=("Segoe UI", 8)).grid(
             row=2, column=2, sticky="w", padx=(10, 0), pady=(8, 0))
 
