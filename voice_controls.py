@@ -1490,7 +1490,9 @@ def run(stop_event: _threading.Event | None = None) -> bool:
                 elif partial:
                     # Complete commands fire after the global response delay;
                     # bare action verbs fire after their own per-verb grace time.
-                    if partial in _early_set:
+                    if _is_null_bare(partial):
+                        required = None              # never fire a bare prefix-verb
+                    elif partial in _early_set:
                         required = PARTIAL_STABLE_SECS
                     elif partial in _bare_delays:
                         required = _bare_delays[partial]
