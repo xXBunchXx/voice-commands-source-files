@@ -715,6 +715,18 @@ class SettingsWidget(tk.Frame):
                       "  Your groups appear here too — or type any .exe name (e.g. blender.exe)",
                  bg=CARD, fg=MUTED, font=("Segoe UI", 8), justify="left").pack(anchor="w")
 
+        # Per-command speed override
+        speed_row = tk.Frame(body, bg=CARD)
+        speed_row.pack(fill="x", pady=(8, 0))
+        tk.Label(speed_row, text="Speed (ms):", bg=CARD, fg=MUTED,
+                 font=("Segoe UI", 9)).pack(side="left")
+        tk.Spinbox(speed_row, from_=0, to=2000, increment=10, textvariable=speed_var,
+                   width=6, bg=ENTRY_BG, fg=FG, buttonbackground=CARD,
+                   insertbackground=FG, relief="flat", font=("Segoe UI", 10),
+                   justify="center").pack(side="left", padx=(6, 0))
+        tk.Label(speed_row, text="0 = use global Response speed; lower (e.g. 40) = near-instant",
+                 bg=CARD, fg=MUTED, font=("Segoe UI", 8)).pack(side="left", padx=(8, 0))
+
         tk.Frame(body, bg=MUTED, height=1).pack(fill="x", pady=(10, 8))
 
         sc_frame  = tk.Frame(body, bg=CARD)
