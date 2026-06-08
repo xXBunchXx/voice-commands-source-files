@@ -1610,6 +1610,7 @@ def run(stop_event: _threading.Event | None = None) -> bool:
                         rec_ref = KaldiRecognizer(model_ref, SAMPLE_RATE, new_grammar)
                         _ref_last_text = ""
                     _early_set    = _early_fire_set(new_grammar)
+                    _prefix_set   = _prefix_fire_set(new_grammar, _early_set)
                     _partial_text = ""
                     print(f"  ↻  Grammar updated for '{proc or 'unknown'}'")
                 except Exception as _ge:
