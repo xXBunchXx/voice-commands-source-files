@@ -308,6 +308,39 @@ def set_response_delay(value: float) -> None:
     data["RESPONSE_DELAY"] = round(max(0.04, min(1.0, value)), 2)
     save(data)
 
+def get_context_delays() -> dict:
+    """Per-custom-command speed overrides in ms: {phrase: ms}.  0 = global speed."""
+    return load().get("CONTEXT_DELAYS", {})
+
+def set_context_delays(delays: dict) -> None:
+    data = load()
+    clean = {}
+    for k, v in delays.items():
+        try:
+            ms = int(round(float(v)))
+        except (TypeError, ValueError):
+            continue
+        if k and k.strip() and ms > 0:
+            clean[k.strip().lower()] = max(0, min(2000, ms))
+    data["CONTEXT_DELAYS"] = clean
+    save(data)
+
+def set_context_delay(phrase: str, ms) -> None:
+    """Set or clear the speed override for a single custom-command phrase."""
+    delays = get_context_delays()
+    phrase = (phrase or "").strip().lower()
+    try:
+        ms = int(ms)
+    except (TypeError, ValueError):
+        ms = 0
+    if phrase:
+        if ms > 0:
+            delays[phrase] = max(0, min(2000, ms))
+        else:
+            delays.pop(phrase, None)
+    set_context_delays(delays)
+
+
 def get_audio_devices() -> dict:
     """Spoken-name -> {"id": device_id, "name": friendly_name} for audio switching.
     e.g. {"headphones": {"id": "{0.0.0...}", "name": "Headphones (Realtek)"}}."""
