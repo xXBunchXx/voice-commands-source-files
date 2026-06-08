@@ -673,6 +673,13 @@ def minimise_app(app_name: str | None = None) -> None:
             print(f"  Don't know '{app_name}'")
             return
 
+        # Echo's own window — minimise via Tk so the GUI stays in sync
+        if _is_self_app(app_name) and _self_window_cb:
+            _self_window_cb("minimise")
+            print(f"  Minimised {app_name}!")
+            _status(f"Minimising {app_name}")
+            return
+
         # For apps whose visible window can't be found by process/class,
         # bring the window forward via its open handler then send Win+Down.
         if app_name in MINIMISE_VIA_FOCUS:
