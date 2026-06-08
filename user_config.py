@@ -422,6 +422,7 @@ def _schema_defaults() -> dict:
         "CLOSE_DELAY":          5,
         "CONFIDENCE_THRESHOLD": 0.65,
         "COOLDOWN":             1.5,
+        "RESPONSE_DELAY":       0.12,  # seconds a partial must hold before firing
         "COMMAND_WORDS":        DEFAULT_COMMAND_WORDS.copy(),
         "VOLUME_STEPS":         DEFAULT_VOLUME_STEPS.copy(),
         "CONTEXT_COMMANDS":     {},   # empty = use all defaults
