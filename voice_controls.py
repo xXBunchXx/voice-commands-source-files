@@ -560,6 +560,12 @@ def open_or_focus(app_name: str) -> None:
     if app_name not in APPS:
         print(f"  Don't know how to open '{app_name}'")
         return
+    # Echo's own window — restore via Tk so the GUI repaints correctly
+    if _is_self_app(app_name) and _self_window_cb:
+        _self_window_cb("restore")
+        print(f"  Focused {app_name}!")
+        _status(f"Focusing {app_name}")
+        return
     if app_name in OPEN_OVERRIDE:
         OPEN_OVERRIDE[app_name]()
         print(f"▶  Opened/focused {app_name}!")
