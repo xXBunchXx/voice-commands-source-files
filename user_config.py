@@ -25,7 +25,7 @@ APPDATA_DIR = pathlib.Path(os.getenv("APPDATA", "~")) / "Echo"
 CONFIG_FILE = APPDATA_DIR / "config.json"
 
 # ── Version ───────────────────────────────────────────────────────────────────
-APP_VERSION = "1.0.5.4"
+APP_VERSION = "1.0.6.0"
 
 # Any config whose stored VERSION parses to less than this tuple is wiped to
 # defaults on next load.  Bump this only when a deliberate full reset is needed.
