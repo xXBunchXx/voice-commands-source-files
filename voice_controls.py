@@ -1712,10 +1712,14 @@ def run(stop_event: _threading.Event | None = None) -> bool:
                     _partial_text  = partial
                     _partial_since = tnow
                 elif partial:
-                    # Complete commands fire after the global response delay;
-                    # bare action verbs fire after their own per-verb grace time.
+                    # A per-command "Speed (ms)" override wins; otherwise complete
+                    # commands fire after the global response delay (+ a little
+                    # extra for app names / extendable phrases), and bare verbs
+                    # never fire on their own here.
                     if _is_null_bare(partial):
                         required = None              # never fire a bare prefix-verb
+                    elif partial in _cmd_timing:
+                        required = _cmd_timing[partial]   # explicit per-command time
                     elif partial in _early_set:
                         # App-name commands and commands that could still be
                         # extended (e.g. "save" → "save layout three") settle a
@@ -1724,8 +1728,6 @@ def run(stop_event: _threading.Event | None = None) -> bool:
                         if (_phrase_has_app(partial, _app_forms)
                                 or partial in _prefix_set):
                             required += _APP_SETTLE_EXTRA
-                    elif partial in _bare_delays:
-                        required = _bare_delays[partial]
                     else:
                         required = None
                     if required is not None and (tnow - _partial_since) >= required:
