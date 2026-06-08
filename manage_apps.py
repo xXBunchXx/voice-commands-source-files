@@ -760,12 +760,23 @@ class AppManagerWidget(tk.Frame):
             return False
         return True
 
+    def _show_results(self, show: bool):
+        """Pack/unpack the results frame so the layout contracts when empty."""
+        if show and not self._results_packed:
+            self._search_results.pack(fill="x", pady=(4, 0))
+            self._results_packed = True
+        elif not show and self._results_packed:
+            self._search_results.pack_forget()
+            self._results_packed = False
+
     def _refresh_search_results(self):
         for w in self._search_results.winfo_children():
             w.destroy()
         q = self._search_var.get().strip()
         if not q:
+            self._show_results(False)
             return
+        self._show_results(True)
         if self._all_candidates is None:
             self._lbl(self._search_results, "Loading installed apps…",
                       fg=MUTED, font=("Segoe UI", 8)).pack(anchor="w", pady=2)
