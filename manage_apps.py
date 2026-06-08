@@ -2,6 +2,7 @@
 App Manager — add / delete entries in the user's local config.
 Embeds directly in the main window as a tab (AppManagerWidget).
 """
+import os
 import pathlib
 import re
 import threading
