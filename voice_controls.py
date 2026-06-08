@@ -39,8 +39,13 @@ APPS        = _cfg.get("APPS", {})
 PROC_NAMES  = _cfg.get("PROC_NAMES", {})
 
 SAMPLE_RATE = 16000
-FRAMES_PER_BUFFER = 1024
+FRAMES_PER_BUFFER = 512    # ~32ms chunks — finer granularity for low-latency partials
 COOLDOWN = 1.5
+
+# How long a partial result must stay unchanged before we treat it as a finished
+# command and act on it (instead of waiting for Vosk's end-of-speech silence,
+# which adds ~0.5s).  Lower = snappier but slightly more sensitive to mid-word pauses.
+PARTIAL_STABLE_SECS = 0.12
 CONFIDENCE_THRESHOLD = 0.65
 
 # Populated from config in run() — use _cw(key) to get current trigger word
