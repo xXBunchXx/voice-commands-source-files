@@ -741,19 +741,16 @@ class SettingsWidget(tk.Frame):
 
     # ── Export / Import command files ──────────────────────────────────────────
 
-    def _export_cmds(self):
+    def _export_cmds(self, context, label=None):
         import json
+        import re
         all_cmds = self._mode_commands()
 
-        # If rows are ticked, export only those; otherwise export everything.
-        picked = {(p, c) for v, p, c in self._ctx_row_vars if v.get()}
+        # Export just this group/app's commands.
         commands: dict = {}
-        if picked:
-            for phrase, ctx in picked:
-                if phrase in all_cmds and ctx in all_cmds[phrase]:
-                    commands.setdefault(phrase, {})[ctx] = all_cmds[phrase][ctx]
-        else:
-            commands = {p: dict(c) for p, c in all_cmds.items()}
+        for phrase, ctxs in all_cmds.items():
+            if context in ctxs:
+                commands.setdefault(phrase, {})[context] = ctxs[context]
 
         if not commands:
             self._flash("Nothing to export.", RED)
