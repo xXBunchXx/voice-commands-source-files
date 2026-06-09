@@ -461,11 +461,32 @@ class SettingsWidget(tk.Frame):
         frame = tk.Frame(nb, bg=BG)
         nb.add(frame, text="🖱  Custom Commands")
 
+        self._editing_mode   = "default"
+        self._mode_group_vars = {}
+
+        # ── Mode selector ─────────────────────────────────────────────────
+        mode_row = tk.Frame(frame, bg=BG)
+        mode_row.pack(fill="x", padx=4, pady=(8, 2))
+        _lbl(mode_row, "Mode:", fg=FG, font=("Segoe UI Semibold", 9)).pack(side="left")
+        self._mode_var = tk.StringVar(value="default")
+        self._mode_combo = ttk.Combobox(mode_row, textvariable=self._mode_var,
+                                        state="readonly", width=20,
+                                        values=user_config.mode_names())
+        self._mode_combo.pack(side="left", padx=(6, 8))
+        self._mode_combo.bind("<<ComboboxSelected>>", lambda e: self._on_mode_change())
+        _btn(mode_row, "➕  New", self._new_mode, MUTED).pack(side="left")
+        _btn(mode_row, "🗑  Delete", self._delete_mode, RED).pack(side="left", padx=(6, 0))
+        _lbl(mode_row, "Say \"set mode <name>\" to switch.",
+             fg=MUTED, font=("Segoe UI", 8)).pack(side="right")
+
+        # ── Per-mode enabled built-in groups (hidden for default) ─────────
+        self._mode_groups_frame = tk.Frame(frame, bg=CARD, padx=8, pady=6)
+
         top = tk.Frame(frame, bg=BG)
-        top.pack(fill="x", padx=4, pady=(8, 4))
+        top.pack(fill="x", padx=4, pady=(6, 4))
         _lbl(top,
-             "Commands grouped by context.  "
-             "Context can be a built-in group, a custom group, or any .exe name.",
+             "Custom commands for this mode, grouped by context "
+             "(built-in group, custom group, or any .exe name).",
              fg=MUTED, font=("Segoe UI", 8)).pack(side="left")
         _btn(top, "➕  Add Command", self._add_context_cmd).pack(side="right")
 
