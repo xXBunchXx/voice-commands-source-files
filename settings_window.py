@@ -664,6 +664,12 @@ class SettingsWidget(tk.Frame):
                     w.bind("<MouseWheel>", _scroll_pass)
                 self._ctx_row_vars.append((var, phrase, ctx_name))
 
+        # Recompute the scroll region and snap back to the top so the view
+        # never starts scrolled into blank space above the first item.
+        self._ctx_canvas.update_idletasks()
+        self._set_scrollregion(self._ctx_canvas)
+        self._ctx_canvas.yview_moveto(0)
+
     def _add_context_cmd(self):
         self._show_cmd_editor()
 
