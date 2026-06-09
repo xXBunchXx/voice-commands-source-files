@@ -1652,9 +1652,11 @@ def run(stop_event: _threading.Event | None = None) -> bool:
     global APPS, PROC_NAMES, MODEL_PATH, _stop_event, _restart_requested
     global CONFIDENCE_THRESHOLD, COOLDOWN, _COMMAND_WORDS, _VOLUME_STEPS, _CONTEXT_COMMANDS
     global _SPOKEN_NAMES, _SPOKEN_TO_DISPLAY, PARTIAL_STABLE_SECS, _WORD_DELAYS
-    global _AUDIO_DEVICES, _CONTEXT_DELAYS
+    global _AUDIO_DEVICES, _CONTEXT_DELAYS, _MODES, _ACTIVE_MODE
     _cfg                 = user_config.load()
     MODEL_PATH           = user_config.get_model_path()
+    _MODES               = user_config.get_modes()
+    _ACTIVE_MODE         = "default"   # always start in default mode
     APPS                 = _cfg.get("APPS", APPS)
     PROC_NAMES           = _cfg.get("PROC_NAMES", PROC_NAMES)
     CONFIDENCE_THRESHOLD = user_config.get_confidence_threshold()
