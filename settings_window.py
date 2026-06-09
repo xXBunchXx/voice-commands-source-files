@@ -126,6 +126,24 @@ def _all_context_values() -> list[str]:
     return vals
 
 
+def _context_display_maps():
+    """Maps for the context picker so apps show as their display name, not .exe.
+
+    Returns (display_values, disp_to_val, val_to_disp):
+      - display_values: list to show in the dropdown (apps as display names)
+      - disp_to_val:    what the user picked/typed  -> stored context value
+      - val_to_disp:    stored context value         -> label to display
+    """
+    proc_names = user_config.get_proc_names()          # {display: proc.exe}
+    val_to_disp = {pr: disp for disp, pr in proc_names.items() if pr}
+    disp_to_val = {disp: pr for disp, pr in proc_names.items() if pr}
+    display_values = list(_KNOWN_CONTEXTS)
+    display_values += sorted(user_config.get_custom_groups().keys())
+    for pr in sorted(set(proc_names.values())):
+        display_values.append(val_to_disp.get(pr, pr))
+    return display_values, disp_to_val, val_to_disp
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 class SettingsWidget(tk.Frame):
