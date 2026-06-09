@@ -609,12 +609,12 @@ class SettingsWidget(tk.Frame):
                               old_phrase=phrase, old_context=context)
 
     def _del_one_ctx(self, phrase, context):
-        cmds = user_config.get_context_commands()
+        cmds = self._mode_commands()
         if phrase in cmds and context in cmds[phrase]:
             del cmds[phrase][context]
             if not cmds[phrase]:
                 del cmds[phrase]
-        user_config.set_context_commands(cmds)
+        self._mode_set_commands(cmds)
         self._reload_context_list()
         self._flash(f'✓  Deleted "{phrase}" [{context}].')
 
