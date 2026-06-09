@@ -1079,18 +1079,16 @@ class AppManagerWidget(tk.Frame):
         Useful for Store / Start-menu apps (e.g. Claude) that were added via
         shell:AppsFolder and therefore have no .exe process name on record."""
         if not self.combo_var.get():
-            self._set_status("Pick an app from the list first.", RED)
+            self._flash("Pick an app from the list first.", RED)
             return
 
         secs = 5
-        self._set_status(
-            f"Switch to the app's window now — capturing in {secs}s …", AMBER)
 
         def _tick(remaining):
             if remaining > 0:
-                self._set_status(
-                    f"Switch to the app's window now — capturing in "
-                    f"{remaining}s …", AMBER)
+                self._status_lbl.config(
+                    text=f"Switch to the app's window now — capturing in "
+                         f"{remaining}s …", fg=ACCENT_TEXT)
                 self.after(1000, lambda: _tick(remaining - 1))
                 return
             try:
@@ -1099,16 +1097,16 @@ class AppManagerWidget(tk.Frame):
                 _, pid = win32process.GetWindowThreadProcessId(hwnd)
                 name = psutil.Process(pid).name()
             except Exception as e:
-                self._set_status(f"Could not detect process: {e}", RED)
+                self._flash(f"Could not detect process: {e}", RED)
                 return
             if not name or name.lower() in ("echo.exe", "python.exe", "pythonw.exe"):
-                self._set_status(
+                self._flash(
                     "Detected this settings window — try again and focus the "
                     "target app instead.", RED)
                 return
             self.e_edit_proc.delete(0, "end")
             self.e_edit_proc.insert(0, name)
-            self._set_status(
+            self._flash(
                 f'Detected "{name}".  Press 💾 Save Changes to keep it.', GRN)
 
         self.after(1000, lambda: _tick(secs - 1))
