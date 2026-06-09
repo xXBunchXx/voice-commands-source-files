@@ -528,7 +528,7 @@ class SettingsWidget(tk.Frame):
             w.destroy()
         self._ctx_row_vars = []
 
-        cmds   = user_config.get_context_commands()
+        cmds   = self._mode_commands()
         groups = user_config.get_custom_groups()
 
         # Map process names (e.g. "firefox.exe") back to their app display name
