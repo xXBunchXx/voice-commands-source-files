@@ -438,6 +438,43 @@ def set_context_commands(cmds: dict[str, dict[str, str]]) -> None:
     data["CONTEXT_COMMANDS"] = cmds
     save(data)
 
+
+# ── Modes ───────────────────────────────────────────────────────────────────
+# A mode is a named profile.  "default" is implicit (every command group on, its
+# custom commands live in CONTEXT_COMMANDS).  User modes are stored here:
+#   {mode_name: {"groups": {group: bool}, "commands": {phrase: {context: action}}}}
+def get_modes() -> dict:
+    return load().get("MODES", {})
+
+def get_mode(name: str) -> dict:
+    if name == "default":
+        return {"groups": {g: True for g in MODE_GROUPS},
+                "commands": get_context_commands()}
+    m = get_modes().get(name, {})
+    return {"groups": m.get("groups", {g: False for g in MODE_GROUPS}),
+            "commands": m.get("commands", {})}
+
+def save_mode(name: str, groups: dict, commands: dict) -> None:
+    name = (name or "").strip().lower()
+    if not name or name == "default":
+        return
+    data = load()
+    modes = data.setdefault("MODES", {})
+    modes[name] = {"groups": {g: bool(groups.get(g, False)) for g in MODE_GROUPS},
+                   "commands": commands or {}}
+    save(data)
+
+def delete_mode(name: str) -> None:
+    data = load()
+    modes = data.get("MODES", {})
+    if name in modes:
+        del modes[name]
+        data["MODES"] = modes
+        save(data)
+
+def mode_names() -> list:
+    return ["default"] + sorted(get_modes().keys())
+
 def get_custom_groups() -> dict[str, list[str]]:
     """Returns {group_name: [proc_name, ...]}  e.g. {"music": ["spotify.exe","chrome.exe"]}"""
     return load().get("CUSTOM_GROUPS", {})
