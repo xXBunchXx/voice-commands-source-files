@@ -392,6 +392,7 @@ class SettingsWidget(tk.Frame):
             ("Media",       ["skip", "previous", "rewind", "play_pause", "mute", "switch_audio"]),
             ("Keyboard",    ["copy", "paste", "save", "enter", "undo"]),
             ("App control", ["open", "close", "minimise", "maximise", "move", "merge"]),
+            ("Modes",       ["set_mode"]),
             ("Engine",      ["diagnose", "stop_engine", "restart_engine"]),
         ]
         for group_name, keys in groups:
