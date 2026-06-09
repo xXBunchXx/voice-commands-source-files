@@ -521,10 +521,8 @@ class SettingsWidget(tk.Frame):
         bot.pack(fill="x", padx=4, pady=(0, 4))
         _btn(bot, "🗑  Delete Selected", self._del_selected_ctx,
              color=RED).pack(side="left")
-        _btn(bot, "📤  Export", self._export_cmds,
-             color=MUTED).pack(side="left", padx=(8, 0))
         _btn(bot, "📥  Import", self._import_cmds,
-             color=MUTED).pack(side="left", padx=(6, 0))
+             color=MUTED).pack(side="left", padx=(8, 0))
         _btn(bot, "↺  Clear", self._reset_context_cmds,
              color=MUTED).pack(side="right")
 
