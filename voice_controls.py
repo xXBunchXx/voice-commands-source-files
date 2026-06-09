@@ -202,10 +202,11 @@ def _execute_action(action) -> None:
 def _try_context_command(text: str) -> bool:
     """Try to run a context-sensitive command.
     Returns True if the phrase was recognised (whether or not context matched)."""
-    if text not in _CONTEXT_COMMANDS:
+    cmds = _active_context_commands()
+    if text not in cmds:
         return False
     proc    = _get_active_proc()
-    targets = _CONTEXT_COMMANDS[text]
+    targets = cmds[text]
     for context, action in targets.items():
         if _proc_matches_context(proc, context):
             try:
