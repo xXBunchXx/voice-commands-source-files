@@ -926,8 +926,10 @@ class SettingsWidget(tk.Frame):
 
         init_speed   = user_config.get_context_delays().get(
             (old_phrase or phrase).strip().lower(), 0)
+        ctx_display_values, ctx_disp_to_val, ctx_val_to_disp = _context_display_maps()
+        imported     = {"flat": None}
         phrase_var   = tk.StringVar(value=phrase)
-        context_var  = tk.StringVar(value=context)
+        context_var  = tk.StringVar(value=ctx_val_to_disp.get(context, context))
         mode_var     = tk.StringVar(value=init_mode)
         shortcut_var = tk.StringVar(value=init_shortcut)
         repeat_var   = tk.IntVar(value=init_repeat)
