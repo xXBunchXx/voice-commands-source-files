@@ -1117,85 +1117,92 @@ def build_grammar(active_proc: str = "") -> str:
     The grammar is rebuilt dynamically whenever the foreground app changes.
     """
     words = ["[unk]"]
+    groups = _active_groups()   # which command groups the current mode allows
 
-    # Simple commands — include every alias
-    for key in ("skip", "previous", "rewind", "play_pause", "mute",
-                "copy", "paste", "save", "enter", "undo", "diagnose",
-                "stop_engine", "restart_engine"):
+    # Always available — engine control + mode switching (so you can switch back)
+    for key in ("undo", "diagnose", "stop_engine", "restart_engine"):
         words.extend(_cw_all(key))
-    words.append("play")   # permanent extra alias for play_pause
+    for mw in _cw_all("set_mode"):
+        for mode in _mode_names():
+            words.append(f"{mw} {mode}")
 
-    # "play <app>" — focus that app then resume playback
-    _play_words = list(dict.fromkeys(_cw_all("play_pause") + ["play"]))
-    for pw in _play_words:
-        for app in APPS:
-            words.append(f"{pw} {_spoken(app)}")
+    # ── Media group ───────────────────────────────────────────────────────
+    if "media" in groups:
+        for key in ("skip", "previous", "rewind", "play_pause", "mute"):
+            words.extend(_cw_all(key))
+        words.append("play")
+        _play_words = list(dict.fromkeys(_cw_all("play_pause") + ["play"]))
+        for pw in _play_words:
+            for app in APPS:
+                words.append(f"{pw} {_spoken(app)}")
+        for step in _VOLUME_STEPS:
+            words.append(f"volume up {step}")
+            words.append(f"volume down {step}")
 
-    # Prefix commands — cross-product of every alias with every app / position
-    for ow in _cw_all("open"):
-        words.append(ow)
-        words.append(f"{ow} all")
-        for app in APPS:
-            words.append(f"{ow} {_spoken(app)}")
-            words.append(f"{ow} new {_spoken(app)}")
-            for pos in SNAP_POSITIONS:
-                words.append(f"{ow} {_spoken(app)} {pos}")
+    # ── Keyboard group ────────────────────────────────────────────────────
+    if "keyboard" in groups:
+        for key in ("copy", "paste", "save", "enter"):
+            words.extend(_cw_all(key))
 
-    for mw in _cw_all("minimise"):
-        words.append(mw)
-        words.append(f"{mw} all")
-        for app in APPS:
-            words.append(f"{mw} {_spoken(app)}")
-
-    for xw in _cw_all("maximise"):
-        words.append(xw)
-        for app in APPS:
-            words.append(f"{xw} {_spoken(app)}")
-
-    for cw in _cw_all("close"):
-        words.append(cw)
-        words.append(f"{cw} current")
-        for app in APPS:
-            words.append(f"{cw} {_spoken(app)}")
-
-    for mvw in _cw_all("move"):
-        for pos in SNAP_POSITIONS:
-            words.append(f"{mvw} {pos}")
-        words.append(f"{mvw} to background")          # current window
-        for app in APPS:
-            for pos in SNAP_POSITIONS:
-                words.append(f"{mvw} {_spoken(app)} {pos}")
-            words.append(f"{mvw} {_spoken(app)} to background")
-
-    for mgw in _cw_all("merge"):
-        words.append(mgw)
-        for app in APPS:
-            words.append(f"{mgw} {_spoken(app)}")
-
-    # Layouts — "save layout three" / "open layout three"  (1-9)
-    for nw in _NUMBER_WORDS:
-        for sw in _cw_all("save"):
-            words.append(f"{sw} layout {nw}")
+    # ── Apps group ────────────────────────────────────────────────────────
+    if "apps" in groups:
         for ow in _cw_all("open"):
-            words.append(f"{ow} layout {nw}")
+            words.append(ow)
+            words.append(f"{ow} all")
+            for app in APPS:
+                words.append(f"{ow} {_spoken(app)}")
+                words.append(f"{ow} new {_spoken(app)}")
+                for pos in SNAP_POSITIONS:
+                    words.append(f"{ow} {_spoken(app)} {pos}")
+        for mw in _cw_all("minimise"):
+            words.append(mw)
+            words.append(f"{mw} all")
+            for app in APPS:
+                words.append(f"{mw} {_spoken(app)}")
+        for xw in _cw_all("maximise"):
+            words.append(xw)
+            for app in APPS:
+                words.append(f"{xw} {_spoken(app)}")
+        for cw in _cw_all("close"):
+            words.append(cw)
+            words.append(f"{cw} current")
+            for app in APPS:
+                words.append(f"{cw} {_spoken(app)}")
+        for mvw in _cw_all("move"):
+            for pos in SNAP_POSITIONS:
+                words.append(f"{mvw} {pos}")
+            words.append(f"{mvw} to background")
+            for app in APPS:
+                for pos in SNAP_POSITIONS:
+                    words.append(f"{mvw} {_spoken(app)} {pos}")
+                words.append(f"{mvw} {_spoken(app)} to background")
+        for mgw in _cw_all("merge"):
+            words.append(mgw)
+            for app in APPS:
+                words.append(f"{mgw} {_spoken(app)}")
+        for app in APPS:        # bare app names (deferred-verb completion)
+            words.append(_spoken(app))
 
-    # Audio output switching — "change to headphones"
-    for cw in _cw_all("switch_audio"):
-        for dev_name in _AUDIO_DEVICES:
-            words.append(f"{cw} {dev_name}")
+    # ── Layouts group ─────────────────────────────────────────────────────
+    if "layouts" in groups:
+        for nw in _NUMBER_WORDS:
+            for sw in _cw_all("save"):
+                words.append(f"{sw} layout {nw}")
+            for ow in _cw_all("open"):
+                words.append(f"{ow} layout {nw}")
 
-    # Volume
-    for step in _VOLUME_STEPS:
-        words.append(f"volume up {step}")
-        words.append(f"volume down {step}")
+    # ── Audio group ───────────────────────────────────────────────────────
+    if "audio" in groups:
+        for cw in _cw_all("switch_audio"):
+            for dev_name in _AUDIO_DEVICES:
+                words.append(f"{cw} {dev_name}")
 
-    # Context-sensitive commands — only include phrases whose context matches
-    # the currently focused app.  "any" phrases are always included.
-    for phrase, targets in _CONTEXT_COMMANDS.items():
+    # Custom commands for the active mode — filtered to the focused app's context.
+    for phrase, targets in _active_context_commands().items():
         for context in targets:
             if context == "any" or _proc_matches_context(active_proc, context):
                 words.append(phrase)
-                break   # one matching context is enough to include the phrase
+                break
 
     # Deduplicate while preserving order
     seen = set(); out = []
