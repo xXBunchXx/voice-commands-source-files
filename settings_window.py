@@ -1102,14 +1102,14 @@ class SettingsWidget(tk.Frame):
                 new_value = {"type": "macro", "repeat": max(1, repeat_var.get()),
                              "steps": [dict(s) for s in steps]}
 
-            cmds = user_config.get_context_commands()
+            cmds = self._mode_commands()
             if old_phrase and old_context:
                 if old_phrase in cmds and old_context in cmds[old_phrase]:
                     del cmds[old_phrase][old_context]
                     if not cmds[old_phrase]:
                         del cmds[old_phrase]
             cmds.setdefault(phrase_txt, {})[context_txt] = new_value
-            user_config.set_context_commands(cmds)
+            self._mode_set_commands(cmds)
             # Per-command speed override (moves with the phrase if it was renamed)
             if old_phrase and old_phrase.strip().lower() != phrase_txt:
                 user_config.set_context_delay(old_phrase, 0)
