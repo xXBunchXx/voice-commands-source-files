@@ -951,7 +951,7 @@ class SettingsWidget(tk.Frame):
         # Context dropdown — includes known, custom groups, added app procs
         def _ctx_widget(f):
             cb = ttk.Combobox(f, textvariable=context_var, state="normal",
-                              values=_all_context_values(), font=("Segoe UI", 10))
+                              values=ctx_display_values, font=("Segoe UI", 10))
             return cb
         field_row("Context", _ctx_widget)
         tk.Label(body,
