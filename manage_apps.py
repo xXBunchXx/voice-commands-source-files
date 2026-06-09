@@ -441,7 +441,8 @@ class AppManagerWidget(tk.Frame):
                   fg=MUTED, font=("Segoe UI", 8)).grid(
             row=2, column=0, columnspan=2, sticky="w", pady=(8, 0))
         self._lbl(add_card,
-                  'e.g. say "ace sprite" for display name "aseprite"  (blank = use display name)',
+                  'e.g. say "ace sprite" for "aseprite"  (blank = use display name).  '
+                  'Separate several aliases with commas, e.g. "code, editor, vs code".',
                   fg=MUTED, font=("Segoe UI", 8)).grid(
             row=2, column=2, sticky="w", padx=(10, 0), pady=(8, 0))
 
