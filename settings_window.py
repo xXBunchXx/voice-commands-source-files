@@ -1252,7 +1252,26 @@ class SettingsWidget(tk.Frame):
 
         def _save(_e=None):
             phrase_txt  = phrase_var.get().strip().lower()
-            context_txt = context_var.get().strip()
+            context_raw = context_var.get().strip()
+            # Map the display name back to the stored value (e.g. Opera -> opera.exe)
+            context_txt = ctx_disp_to_val.get(context_raw, context_raw)
+
+            # Bulk import: drop every loaded command into the chosen app/group.
+            if imported["flat"]:
+                if not context_txt:
+                    messagebox.showwarning("Missing context",
+                        "Choose an app or group to import into.", parent=overlay)
+                    return
+                cmds = self._mode_commands()
+                for ph, v in imported["flat"].items():
+                    cmds.setdefault(ph, {})[context_txt] = v
+                self._mode_set_commands(cmds)
+                overlay.destroy()
+                self._reload_context_list()
+                self._flash(f'✓  Imported {len(imported["flat"])} '
+                            f'command(s) into [{context_txt}]')
+                return
+
             if not phrase_txt or not context_txt:
                 messagebox.showwarning("Missing fields",
                     "Voice phrase and context are required.", parent=overlay)
