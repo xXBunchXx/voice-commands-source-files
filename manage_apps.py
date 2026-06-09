@@ -1101,18 +1101,11 @@ class AppManagerWidget(tk.Frame):
                          f"{remaining}s …", fg=ACCENT_TEXT)
                 self.after(1000, lambda: _tick(remaining - 1))
                 return
-            try:
-                import win32gui, win32process, psutil
-                hwnd = win32gui.GetForegroundWindow()
-                _, pid = win32process.GetWindowThreadProcessId(hwnd)
-                name = psutil.Process(pid).name()
-            except Exception as e:
-                self._flash(f"Could not detect process: {e}", RED)
-                return
-            if not name or name.lower() in ("echo.exe", "python.exe", "pythonw.exe"):
+            name = self._capture_foreground_proc()
+            if not name:
                 self._flash(
-                    "Detected this settings window — try again and focus the "
-                    "target app instead.", RED)
+                    "Couldn't read the foreground app (or it was this window) — "
+                    "try again and focus the target app.", RED)
                 return
             self.e_edit_proc.delete(0, "end")
             self.e_edit_proc.insert(0, name)
@@ -1120,6 +1113,80 @@ class AppManagerWidget(tk.Frame):
                 f'Detected "{name}".  Press 💾 Save Changes to keep it.', GRN)
 
         self.after(1000, lambda: _tick(secs - 1))
+
+    # ── Shared process-detection helpers ───────────────────────────────────────
+
+    def _capture_foreground_proc(self) -> str:
+        """Return the process name of the current foreground window, or '' if it
+        can't be read or is one of our own / launcher windows."""
+        try:
+            import win32gui, win32process, psutil
+            hwnd = win32gui.GetForegroundWindow()
+            _, pid = win32process.GetWindowThreadProcessId(hwnd)
+            name = psutil.Process(pid).name()
+        except Exception:
+            return ""
+        if not name or name.lower() in (
+                "echo.exe", "python.exe", "pythonw.exe", "explorer.exe",
+                "applicationframehost.exe"):
+            return ""
+        return name
+
+    @staticmethod
+    def _launch_path(path: str) -> None:
+        """Launch an app by its stored path / URI / shell:AppsFolder id."""
+        import subprocess
+        path = str(path)
+        if path.lower().startswith("shell:"):
+            subprocess.Popen(["explorer.exe", path])
+        else:
+            os.startfile(path)
+
+    def _auto_detect_queue(self, queue):
+        """Sequentially launch each (name, path) and capture its process name."""
+        if not queue:
+            self._flash("Process detection finished.", GRN)
+            self._reload()
+            return
+        (name, path), rest = queue[0], queue[1:]
+
+        if not messagebox.askyesno(
+                "Detect process?",
+                f'"{name}" was added without a process name, which custom '
+                "commands and window control need.\n\n"
+                "Launch it now and auto-detect the process?\n"
+                "(Tip: let its window come to the front and don't click away.)",
+                parent=self.winfo_toplevel()):
+            self.after(200, lambda: self._auto_detect_queue(rest))
+            return
+
+        try:
+            self._launch_path(path)
+        except Exception as e:
+            self._flash(f'Could not launch "{name}": {e}', RED)
+            self.after(200, lambda: self._auto_detect_queue(rest))
+            return
+
+        secs = 6
+
+        def _tick(remaining):
+            if remaining > 0:
+                self._status_lbl.config(
+                    text=f'Detecting "{name}" — let its window open … '
+                         f"{remaining}s", fg=ACCENT_TEXT)
+                self.after(1000, lambda: _tick(remaining - 1))
+                return
+            proc = self._capture_foreground_proc()
+            if proc:
+                user_config.add_entry(name, path, proc)
+                self._flash(f'Detected "{proc}" for "{name}".', GRN)
+            else:
+                self._flash(
+                    f'Couldn\'t detect a process for "{name}" — set it manually '
+                    "via 🎯 Detect on the Apps tab.", RED)
+            self.after(900, lambda: self._auto_detect_queue(rest))
+
+        self.after(1800, lambda: _tick(secs))
 
     def _on_save_edit(self):
         """Save edited path, proc and spoken name for the selected entry."""
