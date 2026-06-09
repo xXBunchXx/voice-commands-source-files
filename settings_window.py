@@ -579,6 +579,9 @@ class SettingsWidget(tk.Frame):
             tk.Label(hdr, text=f"  {icon}  {label}", bg=CARD, fg=FG,
                      font=("Segoe UI Semibold", 10),
                      padx=6, pady=5).pack(side="left")
+            _btn(hdr, "📤  Export",
+                 lambda c=ctx_name, l=label: self._export_cmds(c, l),
+                 color=MUTED).pack(side="right", padx=(0, 6))
             hdr.bind("<MouseWheel>", _scroll_pass)
 
             for phrase, value in sorted(entries, key=lambda x: x[0]):
