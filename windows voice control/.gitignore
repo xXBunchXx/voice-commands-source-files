@@ -1,0 +1,14 @@
+# PyInstaller build artifacts
+build/
+dist/
+*.spec
+*.zip
+__pycache__/
+*.pyc
+
+# Generated files
+icon.ico
+
+# Stray files
+'+$n)
+output.log
